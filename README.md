@@ -2,13 +2,13 @@
 
 ### Collaborators
 1. Nicole Norelli
-2. Nick Yu
+2. Mingyang Nick Yu
 3. Justin Ehly
 
 ### Project Scope
 
 #### Goal: 
-Analyze real recent twitter data using R, perform EDA on dataset to provide useful insights with latest reactions on Pfizer vaccines
+Analyze real recent twitter data using R, perform EDA on dataset to provide useful insights along with sentiment analysis using Amazon Comprehend
 
 #### Dataset: 
 Kaggle: 
