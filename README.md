@@ -1,4 +1,4 @@
-# 7330-Term-Porject
+# 7330-Term-Project
 
 ### Collaborators
 1. Nicole Norelli
