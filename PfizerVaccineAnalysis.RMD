@@ -1,0 +1,65 @@
+---
+title: "Pfizer Vaccine Tweets"
+author: "Nicole Norelli, Mingyang Nick YU & Justin Ehly"
+date: "2/3/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Pfizer Vaccine Tweets: A Sentiment Analysis and Implications for Public Health
+#### Problem Statement:
+Worldwide distribution of the Pfizer vaccine in response to the COVID-19 pandemic has been inconsistent, in part due to insufficient data on public perceptions of the vaccine. Deep analysis of public sentiment could assist the medical community develop a more effective distribution strategy, which would save lives.
+This project will analyze real-world Twitter data related to the Pfizer vaccine to identify public perceptions of the vaccine as well as any trends that might be useful to researchers and government officials. We will use these trends to provide recommendations that could inform world-wide government actors to facilitate distribution, education, and public awareness to bolster confidence in the vaccine. The dataset is provided by Kaggle, and the resource link is listed below.
+
+```{r}
+# You need to adjust the work environment to run this code
+setwd("/Users/mingyang/Desktop/SMU/File Management & Database/7330-Term-Porject/Data Set")
+# Resources started using:
+# https://www.earthdatascience.org/courses/earth-analytics/get-data-using-apis/use-twitter-api-r/
+library(tidyverse)
+#plotting and pipes 
+library(ggplot2)
+# text mining library
+library(tidytext)
+# Read in data under tweets
+tweets = read.csv("vaccination_tweets.csv")
+str(tweets)
+summary(tweets)
+# Look at locations
+tweets$user_location = as.factor(tweets$user_location)
+summary(tweets$user_location)
+# how many locations are represented
+length(unique(tweets$user_location))
+## [1] 1356
+# Sort by count
+tweets %>% 
+  count(user_location,sort = TRUE) %>%
+  mutate(user_location = reorder(user_location, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_location,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique locations")
+# Further location cleaning is needed...
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
