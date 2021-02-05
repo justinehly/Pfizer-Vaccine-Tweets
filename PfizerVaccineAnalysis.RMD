@@ -286,19 +286,246 @@ tweets %>% filter(user_city=="AS")%>% select(id,user_location,user_city,user_cou
 write.csv(tweets,"fixed_city_name_tweets2.csv",row.names = FALSE)
 ##########################################################################################################
 # Load in fixed_city_name_tweets2.csv to continue...
+tweets = read_csv("fixed_city_name_tweets2.csv")
+tweetslength = dim(tweets)[1] #4139
+# Look at user_city less than 4 char
+tweets %>% filter(nchar(user_city)<=4&nchar(user_location)<35 & grepl("AMERICA",user_location))%>%select(id,user_location,user_city,user_country)
+# Fixing user_city = ICA
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="ICA"&(!is.na(tweets[i,17]))){
+    if(grepl("NORTH AMERICA",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]=as.character(NA)
+      print(paste("fixed",tweets[i,3]))
+    }
+    else if(grepl("AMERICA",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]="UNITED STATES"
+      print(paste("fixed",tweets[i,3],tweets[i,18]))
+    }
+  }
+}
+# Fixing LA BELLE PROVINCE
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="BELL"&(!is.na(tweets[i,17]))){
+    if(grepl("LA BELLE PROVINCE",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]="CANADA"
+      print(paste("fixed",tweets[i,3]))
+    }
+  }
+}
 
-leftover2 = tweets%>%
-  filter(is.na(user_country)&(!is.na(user_location)))%>%
-                             select(id,user_location,user_city,user_country)
-#Write out not fixed column and see what's going on...
-write.csv(leftover2,"after_full_country_name_fix.csv",row.names=FALSE)
+# Decide to fix USA after fixing STATES name first
+usa.states = read_csv("usa_states.csv")
+usa.states = data.frame(usa.states)
+usa.states$State = toupper(usa.states$State)
+usa.states = usa.states[,-2]
+head(usa.states)
+usstatelength = dim(usa.states)[1]
+# Finished cleaning usa states
+tweets$user_state = as.character(NA)
 
-# Write out after full country name
-write.csv(tweets,"fixed_city_and_full_country_tweets.csv",row.names = FALSE)
-gg_miss_var(tweets)
+# Go through tweets for all states
+for(i in 1:tweetslength){
+  for(j in 1:usstatelength){
+    if(grepl(usa.states[j,1],tweets[i,3])&is.na(tweets[i,18])){
+      print(paste("fixing tweet",i))
+      tweets[i,18]="UNITED STATES"
+      tweets[i,19]=usa.states[j,1]
+      print(paste("fixed",tweets[i,3],tweets[i,19],tweets[i,18]))
+      break
+    }
+    else if(grepl(usa.states[j,1],tweets[i,3])&tweets[i,18]!="UNITED STATES"){
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]="UNITED STATES"
+      tweets[i,19]=usa.states[j,1]
+      print(paste("fixed",tweets[i,3],tweets[i,19],tweets[i,18]))
+      break
+    }
+  }
+}
+
+# write another loop to fix city name
+for(i in 1:tweetslength){
+  for(j in 1:usstatelength){
+    if(grepl(usa.states[j,1],tweets[i,3])&(!is.na(tweets[i,18]))&tweets[i,18]=="UNITED STATES"){
+      if((!is.na(tweets[i,17]))&usa.states[j,1]!=tweets[i,17]){
+        print(paste("fixing tweet",i))
+        tweets[i,17]=as.character(NA)
+        tweets[i,18]="UNITED STATES"
+        tweets[i,19]=usa.states[j,1]
+        print(paste("fixed",tweets[i,3],tweets[i,19],tweets[i,18]))
+        break
+      }
+      else if((!is.na(tweets[i,17]))&usa.states[j,1]==tweets[i,17]){
+        print(paste("fixing tweet",i))
+        tweets[i,19]=usa.states[j,1]
+        print(paste("fixed",tweets[i,3],tweets[i,19]))
+        break
+      }
+    }
+  }
+}
+
+# Fixing WEST VIRGINIA, MICHIGAN
+tweets %>% filter(grepl("WEST VIRGINIA",user_location))%>%select(id,user_location,user_city,user_country,user_state)
+for(i in 1:tweetslength){
+  if((!is.na(tweets[i,3]))&grepl("WEST VIRGINIA",tweets[i,3])){
+    if(grepl("CHARLESTON",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]="CHARLESTON"
+      tweets[i,19]="WEST VIRGINIA"
+      print(paste("fixed",tweets[i,3],tweets[i,17],tweets[i,19]))
+    }
+    else{
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,19]="WEST VIRGINIA"
+      print(paste("fixed",tweets[i,3],tweets[i,19]))
+    }
+  }
+}
+# Look at MICHIGAN
+tweets %>% filter(grepl("MICHIGAN",user_location))%>%select(id,user_location,user_city,user_country,user_state)
+# Fixing MICHIGAN
+for(i in 1:tweetslength){
+  if((!is.na(tweets[i,3]))&grepl("MICHIGAN",tweets[i,3])){
+    if(grepl("TROY",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]="TROY"
+      tweets[i,19]="MICHIGAN"
+      print(paste("fixed",tweets[i,3],tweets[i,17],tweets[i,19]))
+    }
+    else if(grepl("CANTON",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]="CANTON"
+      tweets[i,19]="MICHIGAN"
+      print(paste("fixed",tweets[i,3],tweets[i,17],tweets[i,19]))
+    }
+    else {
+      print(paste("fixing tweet",i))
+      tweets[i,19]="MICHIGAN"
+      print(paste("fixed",tweets[i,3],tweets[i,19]))
+    }
+  }
+}
+
+# Fixing remaining USA
+for(i in 1:tweetslength){
+  if((!is.na(tweets[i,3]))&(!is.na(tweets[i,18]))&grepl("USA",tweets[i,3])&tweets[i,18]!="UNITED STATES"){
+    if((!is.na(tweets[i,17]))&tweets[i,17]=="WE"){
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]="UNITED STATES"
+      tweets[i,19]=as.character(NA)
+      print(paste("fixed",tweets[i,3],tweets[i,18]))
+    }
+    else if((!is.na(tweets[i,17]))&tweets[i,17]=="METRO"){
+      print(paste("fixing tweet",i))
+      tweets[i,17]="WASHINGTON"
+      tweets[i,18]="UNITED STATES"
+      tweets[i,19]=as.character(NA)
+      print(paste("fixed",tweets[i,3],tweets[i,17],tweets[i,18]))
+    }
+  }
+}
+# Fixing CRANBURY, NJ
+for(i in 1:tweetslength){
+  if((!is.na(tweets[i,3]))&grepl("CRANBURY, NJ",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]="CRANBURY"
+      tweets[i,18]="UNITED STATES"
+      tweets[i,19]="NEW JERSEY"
+      print(paste("fixed",tweets[i,3],tweets[i,17],tweets[i,19],tweets[i,18]))
+      break
+  }
+}
+
+# Fixing NYC where user_city is NA
+for(i in 1:tweetslength){
+  if((!is.na(tweets[i,3]))&grepl("NYC",tweets[i,3])&is.na(tweets[i,17])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]="NEW YORK"
+      tweets[i,18]="UNITED STATES"
+      tweets[i,19]="NEW YORK"
+      print(paste("fixed",tweets[i,3],tweets[i,17],tweets[i,19],tweets[i,18]))
+  }
+}
+
+
+
+###########################################################################################
+#another write out
+write.csv(tweets,"fixed_location_tweets3.csv",row.names=FALSE)
+###########################################################################################
+
+
 ```
 
+### Import Data called fixed_location_tweets3.csv and start analysis
+```{r}
+# You need to adjust the work environment to run this code
+setwd("/Users/mingyang/Desktop/SMU/File Management & Database/7330-Term-Porject/Data Set")
+library(tidyverse)
+#plotting and pipes 
+library(ggplot2)
+# text mining library
+library(tidytext)
+#Look at data
+library(visdat)
+vis_dat(tweets)
+# Look at missing Data
+library(naniar)
 
+tweets = read_csv("fixed_location_tweets3.csv")
+tweets = data.frame(tweets)
+# Look at missing data
+gg_miss_var(tweets)
+# Look at TOP US STATES
+tweets %>% 
+  count(user_state,sort = TRUE) %>%
+  mutate(user_state = reorder(user_state, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_state,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique State")
+
+# Look at TOP WORLD CITIES
+tweets %>% 
+  count(user_city,sort = TRUE) %>%
+  mutate(user_city = reorder(user_city, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_city,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique City")
+
+# Look at TOP Countries
+tweets %>% 
+  count(user_country,sort = TRUE) %>%
+  mutate(user_country = reorder(user_country, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_country,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique Country")
+
+# Look at user_city less than 4 char - potential problem
+#temp1 = tweets %>% filter(nchar(user_city)<=4&nchar(user_location)<35)%>%select(id,user_location,user_city,user_country,user_state)
+#write.csv(temp1,"observe USA values.csv",row.names=FALSE)
+
+
+
+```
 
 
 
