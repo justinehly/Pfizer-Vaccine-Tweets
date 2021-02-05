@@ -1,0 +1,9 @@
+Extracting Tweets/Word Cloud/Sentiment Analysis: 
+https://wetlands.io/maps/Twitter_Analytics_R.nb.html
+
+This is for Filtering Tweets by location when pulling twitter data:
+https://developer.twitter.com/en/docs/tutorials/filtering-tweets-by-location
+
+kaggle-project-vaccine-tweet / missing data
+https://www.kaggle.com/shibaprasadb/analysing-pfizer-vaccine-tweets
+

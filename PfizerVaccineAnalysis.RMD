@@ -25,11 +25,20 @@ library(ggplot2)
 # text mining library
 library(tidytext)
 # Read in data under tweets
-tweets = read.csv("vaccination_tweets.csv")
+tweets = read_csv("vaccination_tweets.csv")
 str(tweets)
 summary(tweets)
+#Look at data
+library(visdat)
+vis_dat(tweets)
+# Look at missing Data
+library(naniar)
+colSums(is.na(tweets))
+gg_miss_var(tweets)
+
+library(GGally)
+tweets %>% ggcorr(label=TRUE)
 # Look at locations
-tweets$user_location = as.factor(tweets$user_location)
 summary(tweets$user_location)
 # how many locations are represented
 length(unique(tweets$user_location))
@@ -45,7 +54,248 @@ tweets %>%
   coord_flip()+
   labs(x = "Count",y="Location",title="Where Twitter users are from - unique locations")
 # Further location cleaning is needed...
+# Need cleaning for user_location column
+# 
 
+world.cities = read_csv("worldcities.csv")
+str(world.cities)
+world.cities %>% filter(city != city_ascii)
+
+#Adding user_city and user_country column for tweets data
+tweets['user_city'] <- as.character(NA)
+tweets['user_country'] <- as.character(NA)
+#transfer user location to all upper case
+tweets$user_location = toupper(tweets$user_location)
+#transfer world.cities city, city_ascii,country to upper
+world.cities$city = toupper(world.cities$city)
+world.cities$city_ascii = toupper(world.cities$city_ascii)
+world.cities$country = toupper(world.cities$country)
+
+citylength = dim(world.cities)[1] #26569
+tweetslength = dim(tweets)[1] #4139
+# The following for loop is for filling in user_city and user_country columns when 
+# There is a match of city name in user_location
+#install.packages("svMisc")
+tweets = data.frame(tweets)
+world.cities = data.frame(world.cities)
+# Reorganize world.cities with city names in decending order
+world.cities = world.cities %>% mutate(citynamelength = nchar(city_ascii)) %>%arrange(desc(citynamelength))
+head(world.cities)
+for(i in 1:tweetslength){
+  for(j in 1:citylength) {
+    if(grepl(world.cities[j,1],tweets[i,3])){
+      print(paste("Processing Tweet ",i))
+      tweets[i,17] = world.cities[j,2]
+      tweets[i,18] = world.cities[j,5]
+      print(paste("fixed",tweets[i,17],", ",tweets[i,18]))
+      break
+    } 
+    else if(grepl(world.cities[j,2],tweets[i,3])){
+      print(paste("Processing Tweet",i))
+      tweets[i,17] = world.cities[j,2]
+      tweets[i,18] = world.cities[j,5]
+      print(paste("fixed",tweets[i,17],",",tweets[i,18]))
+      break
+    }
+  }
+}
+# Explore how well is the city matching did
+# smaller city names seems to problematic
+tweets$user_country = ifelse(tweets$user_city=="SANDY","UNITED KINGDOM",tweets$user_country)
+
+tweets %>% filter(nchar(user_city)<=4&nchar(user_location)<35)%>%select(id,user_location,user_city,user_country)
+
+# We can see some country are wrongly labeled. Using country dataset to correct these errors above
+#write to csv just so not needing to redo this for loop above
+write.csv(tweets,"fixed_city_name_tweets.csv",row.names = FALSE)
+#leftover = tweets%>%
+#  filter(is.na(user_city)&(!is.na(user_location)))%>%
+#                             select(id,user_location,user_city,user_country)
+#Write out not fixed column and see what's going on...
+#write.csv(leftover,"after_city_name_fix.csv",row.names=FALSE)
+##########################################################################################
+#re-read in tweets from cleaned data
+tweets = read_csv("fixed_city_name_tweets.csv")
+tweets = data.frame(tweets)
+summary(tweets)
+# Look again at user_city
+tweets %>% 
+  count(user_city,sort = TRUE) %>%
+  mutate(user_city = reorder(user_city, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_city,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique cities")
+
+# read in country list
+countrylist = read.csv("countries.csv")
+# ENGLAND not in the country name list - Fix first
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="GLAND"&grepl("ENGLAND",tweets[i,3])){
+    print(paste("fixing tweet",i))
+    tweets[i,17]=as.character(NA)
+    tweets[i,18]="UNITED KINGDOM"
+    print(paste("fixed",tweets[i,3],tweets[i,18]))
+  }
+}
+
+countrylength = dim(countrylist)[1]
+# Now go through full country names first
+for(i in 1:tweetslength){
+  for(j in 1:countrylength){
+    if(grepl(countrylist[j,2],tweets[i,3])&is.na(tweets[i,18])){
+      print(paste("fixing tweet",i))
+      tweets[i,18]=countrylist[j,2]
+      print(paste("fixed",tweets[i,3],tweets[i,18]))
+      break
+    }
+    else if(grepl(countrylist[j,2],tweets[i,3])&(countrylist[j,2]!=tweets[i,18])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]=countrylist[j,2]
+      print(paste("fixed",tweets[i,3],tweets[i,18]))
+      break
+    }
+    
+  }
+}
+# Now observe again for user_city
+tweets %>% 
+  count(user_city,sort = TRUE) %>%
+  mutate(user_city = reorder(user_city, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_city,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique cities")
+# Observe for user_country
+tweets %>% 
+  count(user_country,sort = TRUE) %>%
+  mutate(user_country = reorder(user_country, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_country,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique cities")
+# Looks like IG, ARTH, YE, VAIL, OB, AS needs to be fixed
+tweets %>% filter(user_city=="IG")%>% select(id,user_location,user_city,user_country)
+#fixing Michigan, USA
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="IG"&grepl("MICHIGAN, USA",tweets[i,3])){
+    print(paste("fixing tweet",i))
+    tweets[i,17]=as.character(NA)
+    tweets[i,18]="UNITED STATES"
+    print(paste("fixed",tweets[i,3],tweets[i,18]))
+  }
+}
+#fixing Michigan
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="IG"&grepl("MICHIGAN",tweets[i,3])&(!is.na(tweets[i,17]))){
+    print(paste("fixing tweet",i))
+    tweets[i,17]=as.character(NA)
+    tweets[i,18]="UNITED STATES"
+    print(paste("fixed",tweets[i,3],tweets[i,18]))
+  }
+}
+# Observe again
+tweets %>% filter(user_city=="IG")%>% select(id,user_location,user_city,user_country)
+# Rest of IG don't have location
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="IG"&(!is.na(tweets[i,17]))){
+    print(paste("fixing tweet",i))
+    tweets[i,17]=as.character(NA)
+    tweets[i,18]=as.character(NA)
+    print(paste("fixed",tweets[i,3]))
+  }
+}
+# Observe again
+tweets %>% filter(user_city=="IG")%>% select(id,user_location,user_city,user_country)
+# Now look at ARTH
+tweets %>% filter(user_city=="ARTH")%>% select(id,user_location,user_city,user_country)
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="ARTH"&(!is.na(tweets[i,17]))){
+    if(grepl("WI",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]="UNITED STATES"
+      print(paste("fixed",tweets[i,3],tweets[i,18]))
+    }
+    else{
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]=as.character(NA)
+      print(paste("fixed",tweets[i,3]))
+    }
+    
+  }
+}
+# Now fixing YE
+tweets %>% filter(user_city=="YE")%>% select(id,user_location,user_city,user_country)
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="YE"&(!is.na(tweets[i,17]))){
+    if(grepl("SC",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]="UNITED STATES"
+      print(paste("fixed",tweets[i,3],tweets[i,18]))
+    }
+    else{
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]="TURKEY"
+      print(paste("fixed",tweets[i,3],tweets[i,18]))
+    }
+  }
+}
+# Now fixing VAIL
+tweets %>% filter(user_city=="VAIL")%>% select(id,user_location,user_city,user_country)
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="VAIL"&(!is.na(tweets[i,17]))){
+    print(paste("fixing tweet",i))
+    tweets[i,17]=as.character(NA)
+    tweets[i,18]=as.character(NA)
+    print(paste("fixed",tweets[i,3]))
+  }
+}
+# Now fixing OB
+tweets %>% filter(user_city=="OB")%>% select(id,user_location,user_city,user_country)
+for(i in 1:tweetslength){
+  if(tweets[i,17]=="OB"&(!is.na(tweets[i,17]))){
+    if(grepl("USA",tweets[i,3])){
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]="UNITED STATES"
+      print(paste("fixed",tweets[i,3],tweets[i,18]))
+    }
+    else{
+      print(paste("fixing tweet",i))
+      tweets[i,17]=as.character(NA)
+      tweets[i,18]=as.character(NA)
+      print(paste("fixed",tweets[i,3]))
+    }
+  }
+}
+# Now fixing AS
+tweets %>% filter(user_city=="AS")%>% select(id,user_location,user_city,user_country)
+######## AS can't be fixed yet... next step is to fix states before the city name can be fixed further###
+# Save tweets to csv...
+write.csv(tweets,"fixed_city_name_tweets2.csv",row.names = FALSE)
+##########################################################################################################
+# Load in fixed_city_name_tweets2.csv to continue...
+
+leftover2 = tweets%>%
+  filter(is.na(user_country)&(!is.na(user_location)))%>%
+                             select(id,user_location,user_city,user_country)
+#Write out not fixed column and see what's going on...
+write.csv(leftover2,"after_full_country_name_fix.csv",row.names=FALSE)
+
+# Write out after full country name
+write.csv(tweets,"fixed_city_and_full_country_tweets.csv",row.names = FALSE)
+gg_miss_var(tweets)
 ```
 
 
