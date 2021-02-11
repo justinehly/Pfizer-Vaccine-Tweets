@@ -523,10 +523,30 @@ tweets %>%
 #temp1 = tweets %>% filter(nchar(user_city)<=4&nchar(user_location)<35)%>%select(id,user_location,user_city,user_country,user_state)
 #write.csv(temp1,"observe USA values.csv",row.names=FALSE)
 
-
+# Write just tweets comments column out to a csv
+head(tweets$text)
+write.table(tweets$text,"tweet_posts.csv",row.names = FALSE,col.names = FALSE)
 
 ```
 
+### Read in JSON data
+
+```{r}
+# Load the package required to read JSON files.
+library("rjson")
+library(jsonlite)
+# Give the input file name to the function.
+result <- stream_in(file("sentiment.json"))
+
+# Print the result.
+head(result)
+result$Sentiment
+# Convert JSON file to a data frame.
+json_data_frame <- as.data.frame(result)
+print(json_data_frame)
+dim(json_data_frame)
+
+```
 
 
 
