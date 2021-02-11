@@ -525,8 +525,9 @@ tweets %>%
 
 # Write just tweets comments column out to a csv
 head(tweets$text)
-write.table(tweets$text,"tweet_posts.csv",row.names = FALSE,col.names = FALSE)
-
+write.csv(tweets$text, "tweet_posts.csv", row.names=F)
+tweet1 = read.csv("tweet_posts.csv",header = FALSE)
+dim(tweet1)
 ```
 
 ### Read in JSON data
