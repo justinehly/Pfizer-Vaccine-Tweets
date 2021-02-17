@@ -527,6 +527,7 @@ tweets %>%
 # Do some regex operation to get rid of urls and "\n" or "\r" new lines under text field
 # Text processing - create function to remove url and new line in text
 ########################################################################################
+#Reference: https://stackoverflow.com/questions/42460803/regex-in-r-remove-multiple-urls-from-string
 clean_text = function(string){
   #Remove URL
   string = gsub("\\s?(f|ht)(tp)(s?)(://)([^\\.]*)[\\.|/](\\S*)","", string)
