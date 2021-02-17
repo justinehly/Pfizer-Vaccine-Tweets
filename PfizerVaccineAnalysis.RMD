@@ -523,8 +523,22 @@ tweets %>%
 #temp1 = tweets %>% filter(nchar(user_city)<=4&nchar(user_location)<35)%>%select(id,user_location,user_city,user_country,user_state)
 #write.csv(temp1,"observe USA values.csv",row.names=FALSE)
 
+########################################################################################
+# Do some regex operation to get rid of urls and "\n" or "\r" new lines under text field
+# Text processing - create function to remove url and new line in text
+########################################################################################
+clean_text = function(string){
+  #Remove URL
+  string = gsub("\\s?(f|ht)(tp)(s?)(://)([^\\.]*)[\\.|/](\\S*)","", string)
+  #Remove \r and \n
+  string = gsub("\r?\n|\r"," ",string)
+  return(string)
+}
+
+# Performance regex on tweets$text column
+tweets$text = clean_text(tweets$text)
+
 # Write just tweets comments column out to a csv
-head(tweets$text)
 write.csv(tweets$text, "tweet_posts.csv", row.names=F)
 tweet1 = read.csv("tweet_posts.csv",header = FALSE)
 dim(tweet1)
