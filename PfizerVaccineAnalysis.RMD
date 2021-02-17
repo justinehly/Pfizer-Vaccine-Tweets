@@ -537,7 +537,9 @@ clean_text = function(string){
 
 # Performance regex on tweets$text column
 tweets$text = clean_text(tweets$text)
-
+# Uniform Date Format
+library(lubridate)
+tweets$date = ymd_hms(tweets$date)
 # Write just tweets comments column out to a csv
 write.csv(tweets$text, "tweet_posts.csv", row.names=F)
 tweet1 = read.csv("tweet_posts.csv",header = FALSE)
