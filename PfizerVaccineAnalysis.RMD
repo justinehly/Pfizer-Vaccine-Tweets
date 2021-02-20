@@ -457,11 +457,41 @@ for(i in 1:tweetslength){
   }
 }
 
+# Fixing user_state where country is United States with only city name and State Code
+for(i in 1:tweetslength){
+  if((!is.na(tweets[i,18]))&grepl("UNITED STATES",tweets[i,18])&is.na(tweets[i,19])){
+    for(j in 1:usstatelength){
+      current.state = paste(" ",usa.states[j,2],"$",sep = "")
+      if(grepl(current.state,tweets[i,3])){
+        print(paste("fixing tweet",i))
+        tweets[i,19]=usa.states[j,1]
+        print(paste("fixed",tweets[i,3],tweets[i,19],tweets[i,18]))
+        break
+      }
+    }
+  }
+}
+
+#Adding state code
+tweets$us_state_code= as.character(NA)
+#Adding USA state code for easier merging data.
+for(i in 1:tweetslength){
+  if(!is.na(tweets[i,19])){
+    for(j in 1:usstatelength){
+      if(usa.states[j,1]==tweets[i,19]){
+        print(paste("fixing tweet",i))
+        tweets[i,20]=usa.states[j,2]
+        print(paste("fixed",tweets[i,3],tweets[i,19],tweets[i,20]))
+        break
+      }
+    }
+  }
+}
 
 
 ###########################################################################################
 #another write out
-write.csv(tweets,"fixed_location_tweets3.csv",row.names=FALSE)
+write.csv(tweets,"fixed_location_tweets4.csv",row.names=FALSE)
 ###########################################################################################
 
 
@@ -482,7 +512,7 @@ vis_dat(tweets)
 # Look at missing Data
 library(naniar)
 
-tweets = read_csv("fixed_location_tweets3.csv")
+tweets = read_csv("fixed_location_tweets4.csv")
 tweets = data.frame(tweets)
 # Look at missing data
 gg_miss_var(tweets)
