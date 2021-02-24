@@ -1,0 +1,400 @@
+---
+title: "EDA 7330 Project"
+author: "Nicole Norelli"
+date: "2/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+#plotting and pipes 
+library(ggplot2)
+# text mining library
+library(tidytext)
+#Look at data
+library(visdat)
+# Look at missing Data
+library(naniar)
+tweets = read_csv("/Users/nicolenorelli/Documents/DS7330/7330 Project/tweets_loc_sen0223.csv")
+tweets = data.frame(tweets)
+vis_dat(tweets)
+# Look at missing data
+gg_miss_var(tweets)
+# Look at structure of tweets
+str(tweets)
+# Look at TOP US STATES
+tweets %>% 
+  count(user_state,sort = TRUE) %>%
+  mutate(user_state = reorder(user_state, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_state,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique State")
+# Look at TOP WORLD CITIES
+tweets %>% 
+  count(user_city,sort = TRUE) %>%
+  mutate(user_city = reorder(user_city, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_city,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique City")
+# Look at TOP Countries
+tweets %>% 
+  count(user_country,sort = TRUE) %>%
+  mutate(user_country = reorder(user_country, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_country,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique Country")
+
+# Make sentiment a factor with 4 levels
+tweets$sentiment = factor(tweets$sentiment)
+library(viridis)
+```
+
+```{r}
+# Look at proportion of different sentiments by state
+p = tweets %>% 
+  ggplot(aes(x=user_state, fill=sentiment)) + 
+  geom_bar(position="fill") + 
+  scale_fill_viridis_d()
+p + theme(axis.text.x = element_text(angle=90, hjust=1))
+# Look at count by state
+tweets %>% count(user_state,sort = TRUE)
+# Need to remove n<10 (arbitrary choice of n)
+tweets %>% count(user_state,sort = TRUE) %>%
+  filter(n >=10) # gives 19
+# Make a df with state and count (there's probably a better way to do this)
+states.tweet.count = tweets %>% count(user_state,sort = TRUE)
+# Merge w/ original tweets df
+tweets.state.count.merge = merge(tweets, states.tweet.count, by="user_state")
+# rename n to tweets_per_state
+tweets.state.count.merge$tweets_per_state = tweets.state.count.merge$n
+# proportion of sentiments in states w/ 10 or more tweets
+p = tweets.state.count.merge %>% 
+  filter(tweets_per_state >= 10) %>%
+  ggplot(aes(x=user_state, fill=sentiment)) + 
+  geom_bar(position="fill") + 
+  scale_fill_viridis_d() +
+   ggtitle("Proportion of Sentiments in States with 10 or More Tweets")
+p + theme(axis.text.x = element_text(angle=90, hjust=1))
+
+# Same thing by country
+# Make a df with country and count (there's probably a better way to do this)
+country.tweet.count = tweets %>% count(user_country,sort = TRUE)
+# Merge w/ original tweets df
+tweets.country.count.merge = merge(tweets, country.tweet.count, by="user_country")
+# rename n to tweets_per_country
+tweets.country.count.merge$tweets_per_country = tweets.country.count.merge$n
+# proportion of sentiments in countries w/ 10 or more tweets
+p = tweets.country.count.merge %>% 
+  filter(tweets_per_country >= 10) %>%
+  ggplot(aes(x=user_country, fill=sentiment)) + 
+  geom_bar(position="fill") + 
+  scale_fill_viridis_d() +
+  ggtitle("Proportion of Sentiments in Countries with 10 or More Tweets")
+p + theme(axis.text.x = element_text(angle=90, hjust=1))
+
+```
+
+```{r}
+# Distribution of user_followers by sentiment classification
+# Note - had to log to see
+tweets %>% 
+  ggplot(aes(y=log(user_followers), color=sentiment)) +
+  geom_boxplot() +
+  scale_color_viridis_d()
+# not much of a difference
+
+# retweets by sentiment
+tweets %>% 
+  ggplot(aes(y=log(retweets), color=sentiment)) +
+  geom_boxplot() +
+  scale_color_viridis_d()
+# could be noteworthy.  First, how is "mixed" defined?
+tweets %>% 
+  group_by(sentiment) %>%
+  summarise(mean(retweets), count=n())
+# there's only 9 mixed sentiment.  probably not important
+
+# user_friends by sentiment
+tweets %>% 
+  ggplot(aes(y=log(user_friends), color=sentiment)) +
+  geom_boxplot() +
+  scale_color_viridis_d()
+
+# user_favourites by sentiment
+tweets %>% 
+  ggplot(aes(y=log(user_favourites), color=sentiment)) +
+  geom_boxplot() +
+  scale_color_viridis_d()
+```
+
+```{r}
+# user_created
+# put in order of user_created
+tweets.user.created.order = tweets[order(tweets$user_created), ]
+#library(tseries)
+#tweets.user.created.order$DateIndex = 1:nrow(tweets.user.created.order)
+#ggplot()+geom_line(data=tweets.user.created.order,aes(x=DateIndex,y=sentimentScore.positive))
+# not what I was going for
+
+# Here's the calendarHeat code by Paul Bleicher
+#Load the function to the local through Paul Bleicher's GitHub page
+source("https://raw.githubusercontent.com/iascchen/VisHealth/master/R/calendarHeat.R")
+
+calendarHeat <- function(dates, 
+                         values, 
+                         ncolors=99, 
+                         color="r2g", 
+                         varname="Values",
+                         date.form = "%Y-%m-%d", ...) {
+require(lattice)
+require(grid)
+require(chron)
+if (class(dates) == "character" | class(dates) == "factor" ) {
+  dates <- strptime(dates, date.form)
+        }
+caldat <- data.frame(value = values, dates = dates)
+min.date <- as.Date(paste(format(min(dates), "%Y"),
+                    "-1-1",sep = ""))
+max.date <- as.Date(paste(format(max(dates), "%Y"),
+                     "-12-31", sep = ""))
+dates.f <- data.frame(date.seq = seq(min.date, max.date, by="days"))
+
+# Merge moves data by one day, avoid
+caldat <- data.frame(date.seq = seq(min.date, max.date, by="days"), value = NA)
+dates <- as.Date(dates) 
+caldat$value[match(dates, caldat$date.seq)] <- values
+
+caldat$dotw <- as.numeric(format(caldat$date.seq, "%w"))
+caldat$woty <- as.numeric(format(caldat$date.seq, "%U")) + 1
+caldat$yr <- as.factor(format(caldat$date.seq, "%Y"))
+caldat$month <- as.numeric(format(caldat$date.seq, "%m"))
+yrs <- as.character(unique(caldat$yr))
+d.loc <- as.numeric()                        
+for (m in min(yrs):max(yrs)) {
+  d.subset <- which(caldat$yr == m)  
+  sub.seq <- seq(1,length(d.subset))
+  d.loc <- c(d.loc, sub.seq)
+  }  
+caldat <- cbind(caldat, seq=d.loc)
+
+#color styles
+r2b <- c("#0571B0", "#92C5DE", "#F7F7F7", "#F4A582", "#CA0020") #red to blue                                                                               
+r2g <- c("#D61818", "#FFAE63", "#FFFFBD", "#B5E384")   #red to green
+w2b <- c("#045A8D", "#2B8CBE", "#74A9CF", "#BDC9E1", "#F1EEF6")   #white to blue
+g2r <- c("#B5E384", "#FFFFBD", "#FFAE63", "#D61818") #green to red
+            
+assign("col.sty", get(color))
+calendar.pal <- colorRampPalette((col.sty), space = "Lab")
+def.theme <- lattice.getOption("default.theme")
+cal.theme <-
+   function() {  
+  theme <-
+  list(
+    strip.background = list(col = "transparent"),
+    strip.border = list(col = "transparent"),
+    axis.line = list(col="transparent"),
+    par.strip.text=list(cex=0.8))
+    }
+lattice.options(default.theme = cal.theme)
+yrs <- (unique(caldat$yr))
+nyr <- length(yrs)
+print(cal.plot <- levelplot(value~woty*dotw | yr, data=caldat,
+   as.table=TRUE,
+   aspect=.12,
+ layout = c(1, nyr%%7),
+   between = list(x=0, y=c(1,1)),
+   strip=TRUE,
+   main = paste("Calendar Heat Map of ", varname, sep = ""),
+   scales = list(
+     x = list(
+               at= c(seq(2.9, 52, by=4.42)),
+               labels = month.abb,
+               alternating = c(1, rep(0, (nyr-1))),
+               tck=0,
+               cex = 0.7),
+     y=list(
+          at = c(0, 1, 2, 3, 4, 5, 6),
+          labels = c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday",
+                      "Friday", "Saturday"),
+          alternating = 1,
+          cex = 0.6,
+          tck=0)),
+   xlim =c(0.4, 54.6),
+   ylim=c(6.6,-0.6),
+   cuts= ncolors - 1,
+   col.regions = (calendar.pal(ncolors)),
+   xlab="" ,
+   ylab="",
+   colorkey= list(col = calendar.pal(ncolors), width = 0.6, height = 0.5),
+   subscripts=TRUE
+    ) )
+panel.locs <- trellis.currentLayout()
+for (row in 1:nrow(panel.locs)) {
+    for (column in 1:ncol(panel.locs))  {
+    if (panel.locs[row, column] > 0)
+{
+    trellis.focus("panel", row = row, column = column,
+                  highlight = FALSE)
+xyetc <- trellis.panelArgs()
+subs <- caldat[xyetc$subscripts,]
+dates.fsubs <- caldat[caldat$yr == unique(subs$yr),]
+y.start <- dates.fsubs$dotw[1]
+y.end   <- dates.fsubs$dotw[nrow(dates.fsubs)]
+dates.len <- nrow(dates.fsubs)
+adj.start <- dates.fsubs$woty[1]
+
+for (k in 0:6) {
+ if (k < y.start) {
+    x.start <- adj.start + 0.5
+    } else {
+    x.start <- adj.start - 0.5
+      }
+  if (k > y.end) {
+     x.finis <- dates.fsubs$woty[nrow(dates.fsubs)] - 0.5
+    } else {
+     x.finis <- dates.fsubs$woty[nrow(dates.fsubs)] + 0.5
+      }
+    grid.lines(x = c(x.start, x.finis), y = c(k -0.5, k - 0.5), 
+     default.units = "native", gp=gpar(col = "grey", lwd = 1))
+     }
+if (adj.start <  2) {
+ grid.lines(x = c( 0.5,  0.5), y = c(6.5, y.start-0.5), 
+      default.units = "native", gp=gpar(col = "grey", lwd = 1))
+ grid.lines(x = c(1.5, 1.5), y = c(6.5, -0.5), default.units = "native",
+      gp=gpar(col = "grey", lwd = 1))
+ grid.lines(x = c(x.finis, x.finis), 
+      y = c(dates.fsubs$dotw[dates.len] -0.5, -0.5), default.units = "native",
+      gp=gpar(col = "grey", lwd = 1))
+ if (dates.fsubs$dotw[dates.len] != 6) {
+ grid.lines(x = c(x.finis + 1, x.finis + 1), 
+      y = c(dates.fsubs$dotw[dates.len] -0.5, -0.5), default.units = "native",
+      gp=gpar(col = "grey", lwd = 1))
+      }
+ grid.lines(x = c(x.finis, x.finis), 
+      y = c(dates.fsubs$dotw[dates.len] -0.5, -0.5), default.units = "native",
+      gp=gpar(col = "grey", lwd = 1))
+      }
+for (n in 1:51) {
+  grid.lines(x = c(n + 1.5, n + 1.5), 
+    y = c(-0.5, 6.5), default.units = "native", gp=gpar(col = "grey", lwd = 1))
+        }
+x.start <- adj.start - 0.5
+
+if (y.start > 0) {
+  grid.lines(x = c(x.start, x.start + 1),
+    y = c(y.start - 0.5, y.start -  0.5), default.units = "native",
+    gp=gpar(col = "black", lwd = 1.75))
+  grid.lines(x = c(x.start + 1, x.start + 1),
+    y = c(y.start - 0.5 , -0.5), default.units = "native",
+    gp=gpar(col = "black", lwd = 1.75))
+  grid.lines(x = c(x.start, x.start),
+    y = c(y.start - 0.5, 6.5), default.units = "native",
+    gp=gpar(col = "black", lwd = 1.75))
+ if (y.end < 6  ) {
+  grid.lines(x = c(x.start + 1, x.finis + 1),
+   y = c(-0.5, -0.5), default.units = "native",
+   gp=gpar(col = "black", lwd = 1.75))
+  grid.lines(x = c(x.start, x.finis),
+   y = c(6.5, 6.5), default.units = "native",
+   gp=gpar(col = "black", lwd = 1.75))
+   } else {
+      grid.lines(x = c(x.start + 1, x.finis),
+       y = c(-0.5, -0.5), default.units = "native",
+       gp=gpar(col = "black", lwd = 1.75))
+      grid.lines(x = c(x.start, x.finis),
+       y = c(6.5, 6.5), default.units = "native",
+       gp=gpar(col = "black", lwd = 1.75))
+       }
+       } else {
+           grid.lines(x = c(x.start, x.start),
+            y = c( - 0.5, 6.5), default.units = "native",
+            gp=gpar(col = "black", lwd = 1.75))
+           }
+
+ if (y.start == 0 ) {
+  if (y.end < 6  ) {
+  grid.lines(x = c(x.start, x.finis + 1),
+   y = c(-0.5, -0.5), default.units = "native",
+   gp=gpar(col = "black", lwd = 1.75))
+  grid.lines(x = c(x.start, x.finis),
+   y = c(6.5, 6.5), default.units = "native",
+   gp=gpar(col = "black", lwd = 1.75))
+   } else {
+      grid.lines(x = c(x.start + 1, x.finis),
+       y = c(-0.5, -0.5), default.units = "native",
+       gp=gpar(col = "black", lwd = 1.75))
+      grid.lines(x = c(x.start, x.finis),
+       y = c(6.5, 6.5), default.units = "native",
+       gp=gpar(col = "black", lwd = 1.75))
+       }
+       }
+for (j in 1:12)  {
+   last.month <- max(dates.fsubs$seq[dates.fsubs$month == j])
+   x.last.m <- dates.fsubs$woty[last.month] + 0.5
+   y.last.m <- dates.fsubs$dotw[last.month] + 0.5
+   grid.lines(x = c(x.last.m, x.last.m), y = c(-0.5, y.last.m),
+     default.units = "native", gp=gpar(col = "black", lwd = 1.75))
+   if ((y.last.m) < 6) {
+      grid.lines(x = c(x.last.m, x.last.m - 1), y = c(y.last.m, y.last.m),
+       default.units = "native", gp=gpar(col = "black", lwd = 1.75))
+     grid.lines(x = c(x.last.m - 1, x.last.m - 1), y = c(y.last.m, 6.5),
+       default.units = "native", gp=gpar(col = "black", lwd = 1.75))
+   } else {
+      grid.lines(x = c(x.last.m, x.last.m), y = c(- 0.5, 6.5),
+       default.units = "native", gp=gpar(col = "black", lwd = 1.75))
+    }
+ }
+ }
+ }
+trellis.unfocus()
+} 
+lattice.options(default.theme = def.theme)
+}
+
+# Positive sentiment score by date account created
+calendarHeat(tweets$user_created, tweets$sentimentScore.positive, color="r2b", varname="Positive sentiment score")
+
+# Positive sentiment score by date of tweet
+calendarHeat(tweets$date, tweets$sentimentScore.positive, color="r2b", varname="Positive sentiment score")
+calendarHeat(tweets$date, tweets$sentimentScore.negative, color="r2b", varname="Negative sentiment score")
+```
+
+```{r}
+# count by date by sentiment
+tweets %>% 
+  ggplot(aes(x=date, fill=sentiment)) + 
+  geom_histogram() +
+  scale_fill_viridis_d()
+# broken out by sentiment
+tweets %>%
+  ggplot(aes(x=date, fill=sentiment)) +
+  geom_histogram() +
+  facet_grid(rows=vars(sentiment)) +
+  scale_fill_viridis_d()
+```
+
+```{r}
+# make a word cloud
+```
+
+```{r}
+# look at CDC info
+CDC = read_csv('/Users/nicolenorelli/Documents/DS7330/7330 Project/United_States_COVID-19_Cases_and_Deaths_by_State_over_Time.csv')
+# first make submission_date a date
+library(lubridate)
+CDC$submission_date = mdy(CDC$submission_date)
+
+```
