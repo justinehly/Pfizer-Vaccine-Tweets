@@ -388,6 +388,7 @@ tweets %>%
 
 ```{r}
 # make a word cloud
+# reference: http://www.sthda.com/english/wiki/text-mining-and-word-cloud-fundamentals-in-r-5-simple-steps-you-should-know
 # use tweet_posts.csv that Nick cleaned for the sentiment analysis
 library("tm")
 library("SnowballC")
