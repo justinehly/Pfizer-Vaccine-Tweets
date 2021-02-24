@@ -1,0 +1,112 @@
+---
+title: "EDA_by_Nick"
+author: "Mingyang Nick YU"
+date: "2/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Import Data called tweets_loc_sen0223.csv and start analysis and plotting
+
+```{r}
+# You need to adjust the work environment to run this code
+setwd("/Users/mingyang/Desktop/SMU/File Management & Database/7330-Term-Porject/Data Set")
+library(tidyverse)
+#plotting and pipes 
+library(ggplot2)
+# text mining library
+library(tidytext)
+#Look at data
+library(visdat)
+# Look at missing Data
+library(naniar)
+
+tweets = read_csv("tweets_loc_sen0223.csv")
+tweets = data.frame(tweets)
+# Look at missing data
+gg_miss_var(tweets)
+# Look at structure of tweets
+str(tweets)
+# Look at TOP US STATES
+tweets %>% 
+  count(user_state,sort = TRUE) %>%
+  mutate(user_state = reorder(user_state, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_state,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique State")
+
+# Look at TOP WORLD CITIES
+tweets %>% 
+  count(user_city,sort = TRUE) %>%
+  mutate(user_city = reorder(user_city, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_city,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique City")
+
+# Look at TOP Countries
+tweets %>% 
+  count(user_country,sort = TRUE) %>%
+  mutate(user_country = reorder(user_country, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_country,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique Country")
+
+# Make Sentiment into factor
+tweets$sentiment = as.factor(tweets$sentiment)
+
+# Look at USA sentiment
+usa_sentiment = tweets %>% filter(user_country=="UNITED STATES")%>%select(user_country,sentiment)
+
+ggplot(data = usa_sentiment) + 
+  geom_bar(mapping = aes(x = sentiment, y = stat(prop), group = 1))+
+  ggtitle("United States Pfizer Vaccine Sentiment")
+
+# Look at Sentiment in US by States
+tweets %>% filter(!is.na(user_state)) %>% 
+  select(user_state,sentiment) %>%
+  ggplot(aes(user_state, ..count..))+
+  geom_bar(aes(fill=sentiment))+coord_flip()+ggtitle("Sentiment across all US States")
+
+# Look at Sentiment in the world by countries
+tweets %>% filter(!is.na(user_country)) %>%
+  filter(user_country=="UNITED STATES"|user_country=="UNITED KINGDOM"|
+           user_country=="CANADA"|user_country=="INDIA"|
+           user_country=="UNITED ARAB EMIRATES"|user_country=="IRELAND"|
+           user_country=="FRANCE"|user_country=="GERMANY")%>%
+  mutate(user_country = fct_relevel(user_country, 
+            "GERMANY", "FRANCE", "IRELAND", 
+            "UNITED ARAB EMIRATES", "INDIA", "CANADA", 
+            "UNITED KINGDOM", "UNITED STATES")) %>%
+  select(user_country,sentiment) %>%
+  ggplot(aes(user_country, ..count..))+
+  geom_bar(aes(fill=sentiment))+coord_flip()+
+  ggtitle("Sentiment across top 8 country by tweets")
+
+# Look at Sentiment in the US by states - top 8 states tweets
+tweets %>% filter(!is.na(user_state)) %>%
+  filter(user_state=="CALIFORNIA"|user_state=="NEW YORK"|
+           user_state=="TEXAS"|user_state=="FLORIDA"|
+           user_state=="WASHINGTON"|user_state=="ILLINOIS"|
+           user_state=="GEORGIA"|user_state=="MICHIGAN")%>%
+  mutate(user_state = fct_relevel(user_state, 
+            "MICHIGAN", "GEORGIA", "ILLINOIS", 
+            "WASHINGTON", "FLORIDA", "TEXAS", 
+            "NEW YORK", "CALIFORNIA")) %>%
+  select(user_state,sentiment) %>%
+  ggplot(aes(user_state, ..count..))+
+  geom_bar(aes(fill=sentiment))+coord_flip()+
+  ggtitle("Sentiment across top 8 US states by tweets")
+
+```

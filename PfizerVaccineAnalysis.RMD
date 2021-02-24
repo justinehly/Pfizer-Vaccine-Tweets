@@ -630,7 +630,6 @@ library(ggplot2)
 library(tidytext)
 #Look at data
 library(visdat)
-vis_dat(tweets)
 # Look at missing Data
 library(naniar)
 
