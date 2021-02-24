@@ -109,4 +109,19 @@ tweets %>% filter(!is.na(user_state)) %>%
   geom_bar(aes(fill=sentiment))+coord_flip()+
   ggtitle("Sentiment across top 8 US states by tweets")
 
+# Look at Sentiment for top 8 cities by tweets
+tweets %>% filter(!is.na(user_city)) %>%
+  filter(user_city=="LONDON"|user_city=="NEW YORK"|
+           user_city=="DUBAI"|user_city=="NEW DELHI"|
+           user_city=="TORONTO"|user_city=="MUMBAI"|
+           user_city=="GLASGOW"|user_city=="CALIFORNIA")%>%
+  mutate(user_city = fct_relevel(user_city, 
+            "CALIFORNIA", "GLASGOW", "MUMBAI", 
+            "TORONTO", "NEW DELHI", "DUBAI", 
+            "NEW YORK", "LONDON")) %>%
+  select(user_city,sentiment) %>%
+  ggplot(aes(user_city, ..count..))+
+  geom_bar(aes(fill=sentiment))+coord_flip()+
+  ggtitle("Sentiment across top 8 world cities by tweets")
+
 ```
