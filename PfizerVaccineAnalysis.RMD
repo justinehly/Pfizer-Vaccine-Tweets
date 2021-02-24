@@ -497,7 +497,9 @@ write.csv(tweets,"fixed_location_tweets4.csv",row.names=FALSE)
 
 ```
 
-### Import Data called fixed_location_tweets3.csv and start analysis
+### Import Data called fixed_location_tweets3.csv and start fixing on text column
+
+
 ```{r}
 # You need to adjust the work environment to run this code
 setwd("/Users/mingyang/Desktop/SMU/File Management & Database/7330-Term-Porject/Data Set")
@@ -578,26 +580,101 @@ dim(tweet1)
 ```
 
 ### Read in JSON data
+### Merge with Sentiment result from AWS Comprehend(json format), export to tweets_loc_sen0223.csv
 
 ```{r}
 # Load the package required to read JSON files.
 library("rjson")
 library(jsonlite)
 # Give the input file name to the function.
-result <- stream_in(file("sentiment.json"))
+result <- stream_in(file("sentiment_0218.json"))
 
 # Print the result.
 head(result)
+
 result$Sentiment
 # Convert JSON file to a data frame.
 json_data_frame <- as.data.frame(result)
+# Observe the data
 print(json_data_frame)
+tail(json_data_frame,5)
 dim(json_data_frame)
 
+# Create new sentiment data frame frome extracting from json_data_frame
+tweets$sentiment = json_data_frame$Sentiment
+tweets$sentimentScore.mixed = json_data_frame$SentimentScore$Mixed
+tweets$sentimentScore.negative = json_data_frame$SentimentScore$Negative
+tweets$sentimentScore.neutral = json_data_frame$SentimentScore$Neutral
+tweets$sentimentScore.positive = json_data_frame$SentimentScore$Positive
+
+compare = tweets%>% select(text,sentiment)
+head(compare,5)
+tail(compare,5)
+
+###########################################################################################
+#another write out
+write.csv(tweets,"tweets_loc_sen0223.csv",row.names=FALSE)
+###########################################################################################
 ```
 
 
+### Import Data called tweets_loc_sen0223.csv and start analysis and plotting
 
+```{r}
+# You need to adjust the work environment to run this code
+setwd("/Users/mingyang/Desktop/SMU/File Management & Database/7330-Term-Porject/Data Set")
+library(tidyverse)
+#plotting and pipes 
+library(ggplot2)
+# text mining library
+library(tidytext)
+#Look at data
+library(visdat)
+vis_dat(tweets)
+# Look at missing Data
+library(naniar)
+
+tweets = read_csv("tweets_loc_sen0223.csv")
+tweets = data.frame(tweets)
+# Look at missing data
+gg_miss_var(tweets)
+# Look at structure of tweets
+str(tweets)
+# Look at TOP US STATES
+tweets %>% 
+  count(user_state,sort = TRUE) %>%
+  mutate(user_state = reorder(user_state, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_state,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique State")
+
+# Look at TOP WORLD CITIES
+tweets %>% 
+  count(user_city,sort = TRUE) %>%
+  mutate(user_city = reorder(user_city, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_city,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique City")
+
+# Look at TOP Countries
+tweets %>% 
+  count(user_country,sort = TRUE) %>%
+  mutate(user_country = reorder(user_country, n)) %>%
+  na.omit()%>%
+  top_n(20)%>%
+  ggplot(aes(x=user_country,y=n))+
+  geom_col()+
+  coord_flip()+
+  labs(x = "Count",y="Location",title="Where Twitter users are from - unique Country")
+
+
+```
 
 
 
