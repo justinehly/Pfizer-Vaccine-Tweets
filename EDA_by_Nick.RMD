@@ -125,3 +125,52 @@ tweets %>% filter(!is.na(user_city)) %>%
   ggtitle("Sentiment across top 8 world cities by tweets")
 
 ```
+
+### Attempt World Cloud for hashtags column
+
+```{r}
+library(stringr)
+library(tm)
+library(SnowballC)
+library(wordcloud)
+library(RColorBrewer)
+#text =  "['coronavirus', 'SputnikV', 'AstraZeneca', 'PfizerBioNTech', 'Moderna', 'Covid_19']"
+hashtags = str_extract_all(tweets$hashtags,"\'.*\'")
+hashtags = unlist(hashtags)
+hashtags = hashtags %>% na.omit()
+# get rid of single quotes
+hashtags = gsub("'", '', hashtags)
+
+# create a corpus
+hashtags_corpus = Corpus(VectorSource(hashtags))
+
+# create document term matrix applying some transformations
+tdm = TermDocumentMatrix(hashtags_corpus,
+   control = list(removePunctuation = TRUE,
+   removeNumbers = TRUE, tolower = TRUE))
+
+# define tdm as matrix
+m = as.matrix(tdm)
+
+# get word counts in decreasing order
+word_freqs = sort(rowSums(m), decreasing=TRUE) 
+
+# create a data frame with words and their frequencies
+dm = data.frame(word=names(word_freqs), freq=word_freqs)
+
+# plot wordcloud
+wordcloud(dm$word, dm$freq, random.order=FALSE, random.color=TRUE, colors=brewer.pal(8, "Dark2"))
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
