@@ -427,8 +427,45 @@ wordcloud(words = d$word, freq = d$freq, min.freq = 1,
 ```{r}
 # look at CDC info
 CDC = read_csv('/Users/nicolenorelli/Documents/DS7330/7330 Project/United_States_COVID-19_Cases_and_Deaths_by_State_over_Time.csv')
+
 # first make submission_date a date
 library(lubridate)
 CDC$submission_date = mdy(CDC$submission_date)
 
+# group by state, break down total cases by year/month/day
+CaseSummary = CDC %>%
+  mutate(day = format(submission_date, "%d"), month = format(submission_date, "%m"), year = format(submission_date, "%Y")) %>%
+  group_by(state, year, month, day) %>%
+  summarise(total = sum(tot_cases))
+
+# subset of 12/12/2020-1/20/2021
+CDCsubset = CDC %>%
+  filter(submission_date >= as.Date("2020-12-12") & submission_date <= as.Date("2021-01-20"))
+
+# group subset by state, break down total cases by year/month/day
+SubsetSummary = CDCsubset %>%
+  mutate(day = format(submission_date, "%d"), month = format(submission_date, "%m"), year = format(submission_date, "%Y")) %>%
+  group_by(state, year, month, day) %>%
+  summarise(total = sum(tot_cases))
+
+CDCsubset %>%
+  ggplot(aes(x=submission_date, y=tot_cases, fill=state)) +
+  geom_bar(stat="identity") +
+  facet_wrap(vars(state)) +
+  scale_fill_viridis_d()
+
+# let's try this on the top 8 states: CA,NY,TX,FL,WA,IL,GA,MI
+CDCsubset %>%
+  filter(state=="CA" | state=="NY" | state=="TX" | state=="FL" | state=="WA" | state=="IL" | state=="GA" | state=="MI") %>%
+  ggplot(aes(x=submission_date, y=tot_cases, fill=state)) +
+  geom_bar(stat="identity") +
+  facet_wrap(vars(state)) +
+  scale_fill_viridis_d()
+
+# So maybe average total cases in each state over the period of the tweets
+CDCsubset %>%
+  group_by(state) %>%
+  summarise(ave = mean(tot_cases))
+
+# next step would be to merge w/ a df that has pop per state I guess, to scale it
 ```
