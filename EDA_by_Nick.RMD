@@ -160,8 +160,145 @@ word_freqs = sort(rowSums(m), decreasing=TRUE)
 dm = data.frame(word=names(word_freqs), freq=word_freqs)
 
 # plot wordcloud
+set.seed(100)
 wordcloud(dm$word, dm$freq, random.order=FALSE, random.color=TRUE, colors=brewer.pal(8, "Dark2"))
 
+
+```
+
+### Observe Positive tweets hashtag key words
+
+```{r}
+
+pos.tweets = tweets %>% filter(sentiment=="POSITIVE")
+hashtags = str_extract_all(pos.tweets$hashtags,"\'.*\'")
+hashtags = unlist(hashtags)
+hashtags = hashtags %>% na.omit()
+# get rid of single quotes
+hashtags = gsub("'", '', hashtags)
+
+# create a corpus
+hashtags_corpus = Corpus(VectorSource(hashtags))
+
+# create document term matrix applying some transformations
+tdm = TermDocumentMatrix(hashtags_corpus,
+   control = list(removePunctuation = TRUE,
+   removeNumbers = TRUE, tolower = TRUE))
+
+# define tdm as matrix
+m = as.matrix(tdm)
+
+# get word counts in decreasing order
+word_freqs = sort(rowSums(m), decreasing=TRUE) 
+
+# create a data frame with words and their frequencies
+dm = data.frame(word=names(word_freqs), freq=word_freqs)
+
+# plot wordcloud
+set.seed(103)
+wordcloud(dm$word, dm$freq, random.order=FALSE, random.color=TRUE, colors=brewer.pal(8, "Dark2"))
+
+```
+
+### Observe NEGATIVE tweets hashtag key words
+
+```{r}
+
+neg.tweets = tweets %>% filter(sentiment=="NEGATIVE")
+hashtags = str_extract_all(neg.tweets$hashtags,"\'.*\'")
+hashtags = unlist(hashtags)
+hashtags = hashtags %>% na.omit()
+# get rid of single quotes
+hashtags = gsub("'", '', hashtags)
+
+# create a corpus
+hashtags_corpus = Corpus(VectorSource(hashtags))
+
+# create document term matrix applying some transformations
+tdm = TermDocumentMatrix(hashtags_corpus,
+   control = list(removePunctuation = TRUE,
+   removeNumbers = TRUE, tolower = TRUE))
+
+# define tdm as matrix
+m = as.matrix(tdm)
+
+# get word counts in decreasing order
+word_freqs = sort(rowSums(m), decreasing=TRUE) 
+
+# create a data frame with words and their frequencies
+dm = data.frame(word=names(word_freqs), freq=word_freqs)
+
+# plot wordcloud
+set.seed(103)
+wordcloud(dm$word, dm$freq, random.order=FALSE, random.color=TRUE, colors=brewer.pal(8, "Dark2"))
+
+```
+
+### Observe NEUTRAL tweets hashtag key words
+
+```{r}
+
+neutral.tweets = tweets %>% filter(sentiment=="NEUTRAL")
+hashtags = str_extract_all(neutral.tweets$hashtags,"\'.*\'")
+hashtags = unlist(hashtags)
+hashtags = hashtags %>% na.omit()
+# get rid of single quotes
+hashtags = gsub("'", '', hashtags)
+
+# create a corpus
+hashtags_corpus = Corpus(VectorSource(hashtags))
+
+# create document term matrix applying some transformations
+tdm = TermDocumentMatrix(hashtags_corpus,
+   control = list(removePunctuation = TRUE,
+   removeNumbers = TRUE, tolower = TRUE))
+
+# define tdm as matrix
+m = as.matrix(tdm)
+
+# get word counts in decreasing order
+word_freqs = sort(rowSums(m), decreasing=TRUE) 
+
+# create a data frame with words and their frequencies
+dm = data.frame(word=names(word_freqs), freq=word_freqs)
+
+# plot wordcloud
+set.seed(103)
+wordcloud(dm$word, dm$freq, random.order=FALSE, random.color=TRUE, colors=brewer.pal(8, "Dark2"))
+
+```
+
+### Observe MIXED tweets hashtag key words
+
+```{r}
+
+mixed.tweets = tweets %>% filter(sentiment=="MIXED")
+hashtags = str_extract_all(mixed.tweets$hashtags,"\'.*\'")
+hashtags = unlist(hashtags)
+hashtags = hashtags %>% na.omit()
+# get rid of single quotes
+hashtags = gsub("'", '', hashtags)
+
+# create a corpus
+hashtags_corpus = Corpus(VectorSource(hashtags))
+
+# create document term matrix applying some transformations
+tdm = TermDocumentMatrix(hashtags_corpus,
+   control = list(removePunctuation = TRUE,
+   removeNumbers = TRUE, tolower = TRUE))
+
+# define tdm as matrix
+m = as.matrix(tdm)
+
+# get word counts in decreasing order
+word_freqs = sort(rowSums(m), decreasing=TRUE) 
+
+# create a data frame with words and their frequencies
+dm = data.frame(word=names(word_freqs), freq=word_freqs)
+
+# plot wordcloud
+set.seed(103)
+wordcloud(dm$word, dm$freq, random.order=FALSE, random.color=TRUE, colors=brewer.pal(8, "Dark2"))
 
 ```
 
