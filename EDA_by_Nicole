@@ -468,4 +468,119 @@ CDCsubset %>%
   summarise(ave = mean(tot_cases))
 
 # next step would be to merge w/ a df that has pop per state I guess, to scale it
+
+# merge usa_states and state_pop for abbreviations
+# these population numbers are for 2019 and are from the census website
+# import usa_states.csv as usa_states and state_pop.xlsx as state_pop
+StatePop = merge(usa_states, state_pop, by="State")
+
+# just code and pop and change code to "state" to merge
+StatePoptoMerge = StatePop %>% dplyr::select(Code, Population)
+StatePoptoMerge$state = StatePoptoMerge$Code
+
+# now merge with CDC subset
+CDCsubsetWithPop = merge(StatePoptoMerge, CDCsubsetMean, by="state")
+# get ave rate in each state
+CDCsubsetWithPop = CDCsubsetWithPop %>% mutate(ave/Population)
+CDCsubsetWithPop %>% arrange(ave/Population)
+# least: VT, HI, ME, OR, NY, WA, NH, DC, VA, MD
+CDCsubsetWithPop %>% arrange(desc(ave/Population))
+# most: ND, SD, WI, IA, UT, NE, TN, RI, ID, WY
+CDCsubsetWithPop %>% 
+  ggplot(aes(x=state, y=ave/Population)) +
+  geom_bar(stat="identity")
+```
+
+```{r}
+# look at average scores over time
+# get mean positive score for each day in data set
+DailyPositiveAve = tweets %>% group_by(as.Date(date)) %>% summarise(DailyPosScore = mean(sentimentScore.positive))
+DailyPositiveAve$date=DailyPositiveAve$`as.Date(date)`
+DailyPositiveAve %>% 
+  ggplot(aes(x=date, y=DailyPosScore)) + geom_point()
+
+# get mean neg score for each day in data set
+DailyNegativeAve = tweets %>% group_by(as.Date(date)) %>% summarise(DailyNegScore = mean(sentimentScore.negative))
+DailyNegativeAve$date=DailyNegativeAve$`as.Date(date)`
+DailyNegativeAve %>% 
+  ggplot(aes(x=date, y=DailyNegScore)) + geom_point()
+
+# get mean neutral score for each day in data set
+DailyNeutralAve = tweets %>% group_by(as.Date(date)) %>% summarise(DailyNeutScore = mean(sentimentScore.neutral))
+DailyNeutralAve$date=DailyNeutralAve$`as.Date(date)`
+DailyNeutralAve %>% 
+  ggplot(aes(x=date, y=DailyNeutScore)) + geom_point()
+
+# combine them all to graph together
+DailyAve = merge(DailyPositiveAve, DailyNegativeAve, by="date")
+DailyAve = merge(DailyAve, DailyNeutralAve, by="date")
+
+DailyAve %>%
+  ggplot(aes(x=date)) +
+  geom_point(aes(y=DailyPosScore, color="DailyPosScore")) +
+  geom_point(aes(y=DailyNegScore, color="DailyNegScore")) +
+  geom_point(aes(y=DailyNeutScore, color="DailyNeutScore")) +
+  ylim(0,0.80) +
+  xlab("Date") +
+  ylab("Sentiment Likelihood") +
+  ggtitle("Mean Sentiment Likelihood by Day") +
+  scale_color_viridis_d()
+
+# I think this is interesting
+# proportion by date and sentiment
+tweets %>% 
+  ggplot(aes(x=as.Date(date), fill=sentiment)) + 
+  geom_bar(position="fill") +
+  scale_fill_viridis_d() +
+  xlab("Date") +
+  ylab("Proportion") +
+  ggtitle("Proportion of Sentiment by Date")
+```
+
+```{r}
+## Using 4 US Census regions
+## Code for census regions modified from something written by Allen Miller
+us_state_code <- c("AK", "WA", "OR", "CA", "ID", "NV", "UT", "AZ", "MT", "WY", "CO", "NM", "HI",
+           "ND", "SD", "NE,", "KS", "MN", "IA", "MO", "WI", "IL", "IN", "MI", "OH", 
+           "TX", "OK", "AR", "LA", "MS", "TN", "KY", "WV", "AL", "FL", "GA", "SC", "NC", "VA", "DC", "MD", "DE", 
+           "PA", "NY", "VT", "NH", "ME", "MA", "CT", "RI", "NJ")
+regions <- c("West", "West", "West", "West", "West", "West", "West", "West", "West", "West", "West", "West", "West", 
+             "Mid West", "Mid West", "Mid West", "Mid West", "Mid West", "Mid West", "Mid West", "Mid West", "Mid West", 
+             "Mid West", "Mid West", "Mid West", 
+             "South", "South", "South", "South", "South", "South", "South", "South", "South", "South", "South", "South", 
+             "South", "South", "South", "South", "South", 
+             "North East", "North East", "North East", "North East", "North East", "North East", "North East", "North East", 
+             "North East")
+statesRegions <- data.frame(us_state_code, regions)
+tweetsRegion = merge(tweets,statesRegions, by="us_state_code")
+tweetsRegion %>%
+  ggplot(aes(x=regions, fill=sentiment)) + 
+  geom_bar(position="fill") + 
+  scale_fill_viridis_d()
+# not as dramatic as I had hoped.  they're almost exactly the same
+
+# by political party (2020 presidential)
+us_state_code <- c("AK", "WA", "OR", "CA", "ID", "NV", "UT", "AZ", "MT", "WY", "CO", "NM", "HI",
+           "ND", "SD", "NE,", "KS", "MN", "IA", "MO", "WI", "IL", "IN", "MI", "OH", 
+           "TX", "OK", "AR", "LA", "MS", "TN", "KY", "WV", "AL", "FL", "GA", "SC", "NC", "VA", "MD", "DE", 
+           "PA", "NY", "VT", "NH", "ME", "MA", "CT", "RI", "NJ")
+political_party <- c("Rep", "Dem", "Dem", "Dem", "Rep", "Dem", "Rep", "Dem", "Rep", "Rep", "Dem", "Dem", "Dem", 
+             "Rep", "Rep", "Rep", "Rep", "Dem", "Rep", "Rep", "Dem", "Dem", 
+             "Rep", "Dem", "Rep", 
+             "Rep", "Rep", "Rep", "Rep", "Rep", "Rep", "Rep", "Rep", "Rep", "Rep", "Dem", "Rep", 
+             "Rep", "Dem", "Dem", "Dem", 
+             "Dem", "Dem", "Dem", "Dem", "Dem", "Dem", "Dem", "Dem", 
+             "Dem")
+statesPolitical = data.frame(us_state_code,political_party)
+tweetsPoliState = merge(tweets,statesPolitical, by="us_state_code")
+tweetsPoliState %>%
+  ggplot(aes(x=political_party, fill=sentiment)) + 
+  geom_bar(position="fill") + 
+  scale_fill_viridis_d() +
+  ylab("Proportion") +
+  xlab("Political Party") +
+  ggtitle("Proportion of Sentiment by State Political Party")
+# that's almost counterintuitive
+
+
 ```
