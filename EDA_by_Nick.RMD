@@ -145,10 +145,18 @@ hashtags = gsub("'", '', hashtags)
 # create a corpus
 hashtags_corpus = Corpus(VectorSource(hashtags))
 
+# Convert the text to lower case
+hashtags_corpus <- tm_map(hashtags_corpus, content_transformer(tolower))
+
+# remove custom stop words
+custom.stop.words = c("pfizerbiontech","covidvaccine","vaccine","covid19")
+hashtags_corpus = tm_map(hashtags_corpus,removeWords,custom.stop.words)
+
+#inspect(hashtags_corpus)
+
 # create document term matrix applying some transformations
 tdm = TermDocumentMatrix(hashtags_corpus,
-   control = list(removePunctuation = TRUE,
-   removeNumbers = TRUE, tolower = TRUE))
+   control = list(removePunctuation = TRUE))
 
 # define tdm as matrix
 m = as.matrix(tdm)
@@ -180,10 +188,17 @@ hashtags = gsub("'", '', hashtags)
 # create a corpus
 hashtags_corpus = Corpus(VectorSource(hashtags))
 
+# Convert the text to lower case
+hashtags_corpus <- tm_map(hashtags_corpus, content_transformer(tolower))
+# remove custom stop words
+custom.stop.words = c("pfizerbiontech","covidvaccine","vaccine","covid19")
+hashtags_corpus = tm_map(hashtags_corpus,removeWords,custom.stop.words)
+
+#inspect(hashtags_corpus)
+
 # create document term matrix applying some transformations
 tdm = TermDocumentMatrix(hashtags_corpus,
-   control = list(removePunctuation = TRUE,
-   removeNumbers = TRUE, tolower = TRUE))
+   control = list(removePunctuation = TRUE))
 
 # define tdm as matrix
 m = as.matrix(tdm)
@@ -195,7 +210,7 @@ word_freqs = sort(rowSums(m), decreasing=TRUE)
 dm = data.frame(word=names(word_freqs), freq=word_freqs)
 
 # plot wordcloud
-set.seed(103)
+set.seed(105)
 wordcloud(dm$word, dm$freq, random.order=FALSE, random.color=TRUE, colors=brewer.pal(8, "Dark2"))
 
 ```
@@ -213,11 +228,15 @@ hashtags = gsub("'", '', hashtags)
 
 # create a corpus
 hashtags_corpus = Corpus(VectorSource(hashtags))
+# Convert the text to lower case
+hashtags_corpus <- tm_map(hashtags_corpus, content_transformer(tolower))
+# remove custom stop words
+custom.stop.words = c("pfizerbiontech","covidvaccine","vaccine","covid19")
+hashtags_corpus = tm_map(hashtags_corpus,removeWords,custom.stop.words)
 
 # create document term matrix applying some transformations
 tdm = TermDocumentMatrix(hashtags_corpus,
-   control = list(removePunctuation = TRUE,
-   removeNumbers = TRUE, tolower = TRUE))
+   control = list(removePunctuation = TRUE))
 
 # define tdm as matrix
 m = as.matrix(tdm)
@@ -248,10 +267,15 @@ hashtags = gsub("'", '', hashtags)
 # create a corpus
 hashtags_corpus = Corpus(VectorSource(hashtags))
 
+# Convert the text to lower case
+hashtags_corpus <- tm_map(hashtags_corpus, content_transformer(tolower))
+# remove custom stop words
+custom.stop.words = c("pfizerbiontech","covidvaccine","vaccine","covid19")
+hashtags_corpus = tm_map(hashtags_corpus,removeWords,custom.stop.words)
+
 # create document term matrix applying some transformations
 tdm = TermDocumentMatrix(hashtags_corpus,
-   control = list(removePunctuation = TRUE,
-   removeNumbers = TRUE, tolower = TRUE))
+   control = list(removePunctuation = TRUE))
 
 # define tdm as matrix
 m = as.matrix(tdm)
@@ -281,11 +305,15 @@ hashtags = gsub("'", '', hashtags)
 
 # create a corpus
 hashtags_corpus = Corpus(VectorSource(hashtags))
+# Convert the text to lower case
+hashtags_corpus <- tm_map(hashtags_corpus, content_transformer(tolower))
+# remove custom stop words
+custom.stop.words = c("pfizerbiontech","covidvaccine","vaccine","covid19")
+hashtags_corpus = tm_map(hashtags_corpus,removeWords,custom.stop.words)
 
 # create document term matrix applying some transformations
 tdm = TermDocumentMatrix(hashtags_corpus,
-   control = list(removePunctuation = TRUE,
-   removeNumbers = TRUE, tolower = TRUE))
+   control = list(removePunctuation = TRUE))
 
 # define tdm as matrix
 m = as.matrix(tdm)
