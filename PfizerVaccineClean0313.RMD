@@ -157,6 +157,48 @@ write.csv(tweets,"fixed_location_tweets0313.csv",row.names=FALSE)
 ```
 
 
+### Read in JSON data
+### Merge with Sentiment result from AWS Comprehend(json format), export to tweets_loc_sen0223.csv
+
+```{r}
+# Read back in cleaned tweets data
+tweets = read_csv("fixed_location_tweets0313.csv")
+tweets = data.frame(tweets)
+
+# Load the package required to read JSON files.
+library("rjson")
+library(jsonlite)
+# Give the input file name to the function.
+result <- stream_in(file("sentiment_0315.json"))
+
+# Print the result.
+head(result)
+
+result$Sentiment
+# Convert JSON file to a data frame.
+json_data_frame <- as.data.frame(result)
+# Observe the data
+print(json_data_frame)
+tail(json_data_frame,5)
+dim(json_data_frame)
+
+# Create new sentiment data frame frome extracting from json_data_frame
+tweets$sentiment = json_data_frame$Sentiment
+tweets$sentimentScore.mixed = json_data_frame$SentimentScore$Mixed
+tweets$sentimentScore.negative = json_data_frame$SentimentScore$Negative
+tweets$sentimentScore.neutral = json_data_frame$SentimentScore$Neutral
+tweets$sentimentScore.positive = json_data_frame$SentimentScore$Positive
+
+compare = tweets%>% select(text,sentiment)
+head(compare,5)
+tail(compare,5)
+
+###########################################################################################
+#another write out
+write.csv(tweets,"tweets_loc_sen0315.csv",row.names=FALSE)
+###########################################################################################
+```
+
 
 
 
