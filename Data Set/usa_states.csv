@@ -1,52 +1,60 @@
-﻿"State","Abbrev","Code"
-"Alabama","Ala.","AL"
-"Alaska","Alaska","AK"
-"Arizona","Ariz.","AZ"
-"Arkansas","Ark.","AR"
-"California","Calif.","CA"
-"Colorado","Colo.","CO"
-"Connecticut","Conn.","CT"
-"Delaware","Del.","DE"
-"District of Columbia","D.C.","DC"
-"Florida","Fla.","FL"
-"Georgia","Ga.","GA"
-"Hawaii","Hawaii","HI"
-"Idaho","Idaho","ID"
-"Illinois","Ill.","IL"
-"Indiana","Ind.","IN"
-"Iowa","Iowa","IA"
-"Kansas","Kans.","KS"
-"Kentucky","Ky.","KY"
-"Louisiana","La.","LA"
-"Maine","Maine","ME"
-"Maryland","Md.","MD"
-"Massachusetts","Mass.","MA"
-"Michigan","Mich.","MI"
-"Minnesota","Minn.","MN"
-"Mississippi","Miss.","MS"
-"Missouri","Mo.","MO"
-"Montana","Mont.","MT"
-"Nebraska","Nebr.","NE"
-"Nevada","Nev.","NV"
-"New Hampshire","N.H.","NH"
-"New Jersey","N.J.","NJ"
-"New Mexico","N.M.","NM"
-"New York","N.Y.","NY"
-"North Carolina","N.C.","NC"
-"North Dakota","N.D.","ND"
-"Ohio","Ohio","OH"
-"Oklahoma","Okla.","OK"
-"Oregon","Ore.","OR"
-"Pennsylvania","Pa.","PA"
-"Rhode Island","R.I.","RI"
-"South Carolina","S.C.","SC"
-"South Dakota","S.D.","SD"
-"Tennessee","Tenn.","TN"
-"Texas","Tex.","TX"
-"Utah","Utah","UT"
-"Vermont","Vt.","VT"
-"Virginia","Va.","VA"
-"Washington","Wash.","WA"
-"West Virginia","W.Va.","WV"
-"Wisconsin","Wis.","WI"
-"Wyoming","Wyo.","WY"
+﻿State,Abbrev,Code,
+Alaska,Alaska,AK,AK
+Alabama,Ala.,AL,AL
+Arkansas,Ark.,AR,AR
+American Samoa,AmS.,AS,AS
+Arizona,Ariz.,AZ,AZ
+California,Calif.,CA,CA
+Colorado,Colo.,CO,CO
+Connecticut,Conn.,CT,CT
+District of Columbia,D.C.,DC,DC
+Delaware,Del.,DE,DE
+Florida,Fla.,FL,FL
+Federated States of Micronesia,FSM,FSM,FSM
+Georgia,Ga.,GA,GA
+Guam,Gua.,GU,GU
+Hawaii,Hawaii,HI,HI
+Iowa,Iowa,IA,IA
+Idaho,Idaho,ID,ID
+Illinois,Ill.,IL,IL
+Indiana,Ind.,IN,IN
+Kansas,Kans.,KS,KS
+Kentucky,Ky.,KY,KY
+Louisiana,La.,LA,LA
+Massachusetts,Mass.,MA,MA
+Maryland,Md.,MD,MD
+Maine,Maine,ME,ME
+Michigan,Mich.,MI,MI
+Minnesota,Minn.,MN,MN
+Missouri,Mo.,MO,MO
+Northern Mariana Islands,MP,MP,MP
+Mississippi,Miss.,MS,MS
+Montana,Mont.,MT,MT
+North Carolina,N.C.,NC,NC
+North Dakota,N.D.,ND,ND
+Nebraska,Nebr.,NE,NE
+New Hampshire,N.H.,NH,NH
+New Jersey,N.J.,NJ,NJ
+New Mexico,N.M.,NM,NM
+Nevada,Nev.,NV,NV
+New York,N.Y.,NY,NY
+Ohio,Ohio,OH,OH
+Oklahoma,Okla.,OK,OK
+Oregon,Ore.,OR,OR
+Pennsylvania,Pa.,PA,PA
+Puerto Rico,PR,PR,PR
+Republic of Palau,PW,PW,PW
+Rhode Island,R.I.,RI,RI
+Marshall Islands,RMI,RMI,RMI
+South Carolina,S.C.,SC,SC
+South Dakota,S.D.,SD,SD
+Tennessee,Tenn.,TN,TN
+Texas,Tex.,TX,TX
+Utah,Utah,UT,UT
+Virginia,Va.,VA,VA
+Virgin Islands,VI,VI,VI
+Vermont,Vt.,VT,VT
+Washington,Wash.,WA,WA
+Wisconsin,Wis.,WI,WI
+West Virginia,W.Va.,WV,WV
+Wyoming,Wyo.,WY,WY

@@ -1,0 +1,140 @@
+---
+title: "Vaccination Data"
+author: "Justin Ehly"
+date: "3/15/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r libraries}
+
+library(tidyverse)
+library(tidyr)
+library(ggplot2)
+library(dplyr)
+library(magrittr)
+library(naniar)
+library(Hmisc)
+library(scales)
+```
+
+
+```{r read Vaccination data}
+
+df <- read.csv('https://raw.githubusercontent.com/owid/covid-19-data/master/public/data/vaccinations/us_state_vaccinations.csv')
+#View(df)
+# remove these locations because they are already reported in the per state data
+# per:  https://covid.cdc.gov/covid-data-tracker/#vaccinations
+
+Feds <- c("Bureau of Prisons", "Dept of Defense", "Indian Health Svc", "Veterans Health", "Long Term Care")
+vacc <- df[which(df$location %nin% Feds), ]
+vacc$date <- as.Date(vacc$date)
+vacc$date <- as.factor(as.Date(vacc$date))
+vacc$location <- as.factor(vacc$location)
+
+
+missing <- sapply(vacc, function(x) sum(is.na(x)))
+missing 
+
+
+# impute missing data
+# copy missing days from prior days
+vacc <- vacc %>% dplyr::group_by(location) %>% 
+  fill(where(is.numeric), .direction = "downup")
+
+vacc <- as.data.frame(vacc)
+
+missing <- sapply(vacc, function(x) sum(is.na(x)))
+missing 
+
+# just keep cols we need for graphing
+vacc <- vacc[,c(1,2,3)]
+names(vacc)[2] <- "state"
+
+```
+
+```{r read death data}
+# get death rates from https://data.cdc.gov/Case-Surveillance/United-States-COVID-19-Cases-and-Deaths-by-State-o/9mfq-cb36
+
+cd <- read.csv("C:/Users/justi/Documents/GitHub/7330-Term-Porject/Data Set/United_States_COVID-19_Cases_and_Deaths_by_State_over_Time031521.csv")
+#View(cd)
+
+# organize factor columns
+cd$submission_date <- as.Date(cd$submission_date, "%m/%d/%y")
+cd$submission_date <- as.factor(cd$submission_date)
+
+# NYC is reported separate from NY so we should rename NYC to NY
+cd$state <- as.character(cd$state)
+cd$state <- case_when(
+  cd$state == "NYC" ~ "NY",
+  TRUE ~ cd$state)
+cd$state <- as.factor(cd$state)
+
+# rename date col
+names(cd)[1] <- "date"
+names(cd)[2] <- "code"
+
+# just interested in date, state (possibly not), total deaths
+cd<-cd[,c(1,2,8)]
+
+# check for missing numbers
+missingCD <- sapply(cd, function(x) sum(is.na(x)))
+missingCD 
+
+str(cd)
+
+cd <- as.data.frame(cd%>% group_by(date,code) %>% summarise(tot_death=sum(tot_death)))
+
+
+```
+
+```{r states table}
+
+states <- read.csv("C:/Users/justi/Documents/GitHub/7330-Term-Porject/Data Set/usa_states.csv")
+View(states)
+names(states)[1] <- "state"
+names(states)[3] <- "code"
+states <- states[,c(1,3)]
+states$state <- as.factor(states$state)
+states$code <- as.factor(states$code)
+
+```
+
+```{r merge tables}
+
+newDF <- merge(cd, states, by = "code")
+newDF <- newDF[,c(2,1,4,3)]
+newDF$date <- as.factor(newDF$date)
+
+newDF2 <- merge(vacc,states, by="state")
+newDF2 <- newDF2[,c(2,4,1,3)]
+df <- merge(newDF, newDF2, by = c("date","code","state"), all.x=FALSE, all.y=TRUE)
+newDF <- newDF[,c(3,1,2,4,6)]
+names(newDF)[1] <- "date"
+
+
+
+```
+
+```{r plots}
+
+newDF %>% dplyr::group_by(date) %>% 
+  dplyr::summarise(TotVaxions=sum(total_vaccinations)/1000000) %>%
+  ggplot(aes(x=as.Date(date), y=TotVaxions)) +
+  geom_line()+
+  geom_point() +
+  labs(title = "Vaccinations vs Deaths",
+       x = "Dates",
+       y = "Total Vaccinations by Day (millions)") +
+  scale_y_continuous(labels=comma) +
+  theme_classic()
+
+
+
+
+
+
+```
