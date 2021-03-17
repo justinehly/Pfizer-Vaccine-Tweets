@@ -204,21 +204,23 @@ dd %>%
   geom_line() +
   #geom_point() +
   scale_color_manual(values = c("blue", "black", "red", "coral", "green")) +
-  labs(title = "Average Sentiment vs Total Covid-19 Vaccinations and Total Covid-19 Deaths in the USA",
+  labs(title = "Average Sentiment vs Total Covid-19 Vaccinations and Deaths in the USA",
        x = "Months",
-       y = "Vaccination and Death Totals",
+       y = "Covid-19 Rolling Vaccination and Death Totals",
        caption = "Sentiment Score is 0-1 and Scaled for this graphic.
-       Data thru March 14, 2021...extra padding is added to this graph for labels") +
+       Data thru March 14, 2021, extra right side units are added to this graph for labels") +
   scale_y_continuous(labels=comma, limits = (c(0,1050000)), 
                      sec.axis = sec_axis( ~./1050000, name = "Sentiment Score",
-                                          labels = function(b) { paste0(round(b * 100, 0), "%")})) +
+                                          labels = function(b) { paste0(signif(b, digits = 3)) })) +
   theme_classic() +
   theme(legend.position = "none") + 
   # old legend position in case we want to use it later theme(legend.position = c(0.12,0.86)) +
-  scale_x_date(limits = as.Date(c("2020-12-12", "2021-04-01"))) +
-  directlabels::geom_dl(aes(label = Legend), method = list("last.polygons", cex=0.9)) +
-  theme(axis.text.y.right = element_text(margin = unit(c(0, 0, 0, 0), "pt")))
-
+  scale_x_date(limits = as.Date(c("2020-12-12", "2021-03-14")), 
+               # Expands 1 unit to the left, 27 units to the right for the labels
+               expand = expansion(add = c(1, 27))) + 
+  directlabels::geom_dl(aes(label = Legend), method = list("last.polygons", cex=0.7)) +
+  theme(axis.text.y.right = element_text(margin = unit(c(0, 2, 0, 2), "pt")))
+  # margin usage: margin(t = 0, r = 0, b = 0, l = 0, unit = "pt") - think TRouBLe
 
 
 
