@@ -10,15 +10,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r libraries}
-
+library(reshape2)
 library(tidyverse)
 library(tidyr)
 library(ggplot2)
-library(dplyr)
+library(ggrepel)
+library(graphics)
 library(magrittr)
 library(naniar)
 library(Hmisc)
 library(scales)
+library(dplyr)
+
 ```
 
 
@@ -32,7 +35,6 @@ df <- read.csv('https://raw.githubusercontent.com/owid/covid-19-data/master/publ
 Feds <- c("Bureau of Prisons", "Dept of Defense", "Indian Health Svc", "Veterans Health", "Long Term Care")
 vacc <- df[which(df$location %nin% Feds), ]
 vacc$date <- as.Date(vacc$date)
-vacc$date <- as.factor(as.Date(vacc$date))
 vacc$location <- as.factor(vacc$location)
 
 
@@ -61,10 +63,18 @@ names(vacc)[2] <- "state"
 
 cd <- read.csv("C:/Users/justi/Documents/GitHub/7330-Term-Porject/Data Set/United_States_COVID-19_Cases_and_Deaths_by_State_over_Time031521.csv")
 #View(cd)
+cd <- cd %>% arrange(submission_date) %>% arrange(state)
+summary(cd)
 
-# organize factor columns
-cd$submission_date <- as.Date(cd$submission_date, "%m/%d/%y")
-cd$submission_date <- as.factor(cd$submission_date)
+# change date to date format
+cd$submission_date <- as.Date(cd$submission_date, format = "%m/%d/%Y")
+# check for missing numbers
+missingCD <- sapply(cd, function(x) sum(is.na(x)))
+missingCD 
+# just interested in date, state (possibly not), total deaths
+cd <- cd[,c(1,2,8)]
+
+
 
 # NYC is reported separate from NY so we should rename NYC to NY
 cd$state <- as.character(cd$state)
@@ -77,16 +87,14 @@ cd$state <- as.factor(cd$state)
 names(cd)[1] <- "date"
 names(cd)[2] <- "code"
 
-# just interested in date, state (possibly not), total deaths
-cd<-cd[,c(1,2,8)]
+# organize dataframe
+cd <- cd %>% arrange(date) %>% arrange(code)
 
-# check for missing numbers
-missingCD <- sapply(cd, function(x) sum(is.na(x)))
-missingCD 
+# reduce dataframe to just the date ranges we have tweets for starting 12/12/2020
+cd <- cd %>% subset(date >= "2020-12-12")
 
 str(cd)
 
-cd <- as.data.frame(cd%>% group_by(date,code) %>% summarise(tot_death=sum(tot_death)))
 
 
 ```
@@ -103,36 +111,113 @@ states$code <- as.factor(states$code)
 
 ```
 
-```{r merge tables}
 
+```{r merge tables}
+library(data.table)
+# data frame combinging the state abbvs and names with death totals
 newDF <- merge(cd, states, by = "code")
 newDF <- newDF[,c(2,1,4,3)]
 newDF$date <- as.factor(newDF$date)
 
+newDF <- newDF %>% arrange(date) %>% arrange(code)
+
+# date frame combining the state abbrvs and names with vacc totals
 newDF2 <- merge(vacc,states, by="state")
 newDF2 <- newDF2[,c(2,4,1,3)]
-df <- merge(newDF, newDF2, by = c("date","code","state"), all.x=FALSE, all.y=TRUE)
-newDF <- newDF[,c(3,1,2,4,6)]
-names(newDF)[1] <- "date"
+newDF2 <- newDF2 %>% arrange(date) %>% arrange(code) %>% subset(date < "2021-03-15")
+newDF2$date <- as.factor(newDF2$date)
 
+# create one dataframe with both death totals and vaccinations
+df <- merge(newDF, newDF2, by = c("date","code","state"), all.x=TRUE, all.y=TRUE)
+sapply(df, function(x) sum(is.na(x)))
+
+# const  
+# locf replaces NA's with the most recent non-NA prior to it
+# nocb next observation carried backward
+# setnafill part of the data.table package
+df <- setnafill(df, cols="total_vaccinations", fill=0)
+names(df)[5] <- "tot_vacc"
+
+# subset the master dataframe to get totals by date instead of by state
+df2 <- df %>% dplyr::group_by(date) %>% 
+  dplyr::summarise(TotVax=sum(tot_vacc)/100, TotDeath=sum(tot_death))
+df2$TotVax <- as.integer(df2$TotVax) #doing some rounding
+names(df2)[2] <- "Total Vaccinations(00)" #renaming variable to show it is scales to the 100's
+names(df2)[3] <- "Total Deaths"
+df2 <- as.data.frame(df2)
+
+```
+
+```{r twitter sentiment}
+
+sent <- read.csv("C:/Users/justi/Documents/GitHub/7330-Term-Porject/Data Set/tweets_loc_sen0315.csv")
+#View(sent)
+#names(sent)
+sent <- sent[,c(10,20:23)]
+#str(sent)
+sent$date <- as.factor(as.Date(sent$date))
+sent <- rename(sent, "Mixed"="sentimentScore.mixed", 
+               "Negative"= "sentimentScore.negative", "Neutral"="sentimentScore.neutral",
+               "Positive" = "sentimentScore.positive")
+
+# average each sentiment score by date
+# scale to same as Total Vaccinations(00) by mult mean by df2[dim(df2)[1],2] and we will call that mulitplier 'xm'
+xm <- df2[dim(df2)[1],2]
+
+sent <- sent %>% group_by(date) %>%
+  dplyr::summarise("AvgMixed Sent"=mean(Mixed)*xm,
+                   "AvgNegative Sent"=mean(Negative)*xm,
+                   "AvgNeutral Sent"=mean(Neutral)*xm,
+                   "AvgPositive Sent"=mean(Positive)*xm)
+sent[93,] <- sent[92,]
+sent$date <- as.character(sent$date)
+sent[93,1] <- "2021-03-14"
+sent$date <- as.factor(sent$date)
+
+```
+
+
+```{r combine sentiment with death and vacc}
+
+# merge df2 + sentament analysis
+sentAns <- merge(df2, sent, by="date")
+sentAns <- sentAns[,-4]
+View(sentAns)
 
 
 ```
 
+
+
 ```{r plots}
 
-newDF %>% dplyr::group_by(date) %>% 
-  dplyr::summarise(TotVaxions=sum(total_vaccinations)/1000000) %>%
-  ggplot(aes(x=as.Date(date), y=TotVaxions)) +
-  geom_line()+
-  geom_point() +
-  labs(title = "Vaccinations vs Deaths",
-       x = "Dates",
-       y = "Total Vaccinations by Day (millions)") +
-  scale_y_continuous(labels=comma) +
-  theme_classic()
+
+# melt the dataframe for mapping multiple lines with different colors
+dd <- melt(sentAns, id=c("date"))
+names(dd)[2] <- "Legend"
+
+labels <- data.frame(unique(dd$Legend))
+names(labels)[1] <- "label"
 
 
+# plot deaths and vaccines 
+dd %>% 
+  ggplot(aes(x=as.Date(date), y=value, color=Legend)) +
+  geom_line() +
+  #geom_point() +
+  scale_color_manual(values = c("blue", "black", "red", "coral", "green")) +
+  labs(title = "Average Sentament + Vaccinations + Deaths by Date",
+       x = "Months",
+       y = "Vaccination and Death Totals",
+       caption = "Sentiment Score is 0-1 and Scaled for this graphic") +
+  scale_y_continuous(labels=comma, 
+                     sec.axis = sec_axis( ~./xm, name = "Sentiment Score",
+                                          labels = function(b) { paste0(round(b * 100, 0), "%")})) +
+  theme_classic() +
+  theme(legend.position = "none") + 
+  # old legend position in case we want to use it later theme(legend.position = c(0.12,0.86)) +
+  scale_x_date(limits = as.Date(c("2020-12-12", "2021-04-01"))) +
+  directlabels::geom_dl(aes(label = Legend), method = list("last.polygons", cex=0.9))
 
 
 
