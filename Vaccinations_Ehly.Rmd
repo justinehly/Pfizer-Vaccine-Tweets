@@ -16,10 +16,13 @@ library(tidyverse)
 library(tidyr)
 library(ggplot2)
 library(graphics)
+library(ggpubr)
+library(survminer)
 library(magrittr)
 library(naniar)
 library(Hmisc)
 library(scales)
+library(data.table)
 library(dplyr)
 
 ```
@@ -160,7 +163,7 @@ sent <- rename(sent, "Mixed"="sentimentScore.mixed",
                "Positive" = "sentimentScore.positive")
 
 # average each sentiment score by date
-# scale to same as Total Vaccinations(00) by mult mean by df2[dim(df2)[1],2] and we will call that mulitplier 'xm'
+# scale to same as Total Vaccinations(00) by mult mean by df2[dim(df2)[1],2] and we will call that multiplier 'xm'
 xm <- df2[dim(df2)[1],2]
 
 sent <- sent %>% group_by(date) %>%
@@ -186,9 +189,31 @@ sentAns <- sentAns[,-4]
 
 ```
 
+```{r tweets per day}
 
+tw <- read.csv("C:/Users/justi/Documents/GitHub/7330-Term-Porject/Data Set/tweets_loc_sen0315.csv")
+#View(tw)
+#names(tw)
+tw <- tw[,c(10,3,17:23)]
+tw <- tw[,c(1,5)]
 
-```{r plots}
+# convert date column from char to Date
+tw$date <- as.Date(tw$date)
+
+#arrange by date
+tw <- tw %>% arrange(date)
+
+# need to have this in a data.table not a dataframe for further manipulation
+is.data.table(tw)
+tw <- as.data.table(tw)
+
+# count tweets/ day (data.table function)
+tweetsPerDay <- tw[, .(count = .N), by = .(date, sentiment)][]
+tweetsPerDay
+
+```
+
+```{r plots Main Graphic}
 
 # prep dataframe for new melt method from data.table package
 sentAns$`Total Deaths` <- as.numeric(sentAns$`Total Deaths`)
@@ -199,16 +224,14 @@ names(dd)[2] <- "Legend"
 
 
 # plot deaths and vaccines 
-dd %>% 
+overallData <- 
+  dd %>% 
   ggplot(aes(x=as.Date(date), y=value, color=Legend)) +
   geom_line() +
   #geom_point() +
-  scale_color_manual(values = c("blue", "black", "red", "coral", "green")) +
-  labs(title = "Average Sentiment vs Total Covid-19 Vaccinations and Deaths in the USA",
-       x = "Months",
-       y = "Covid-19 Rolling Vaccination and Death Totals",
-       caption = "Sentiment Score is 0-1 and Scaled for this graphic.
-       Data thru March 14, 2021, extra right side units are added to this graph for labels") +
+  scale_color_manual(values = c("blue", "black", "red", "lightsteelblue3", "green")) +
+  labs(x = "Months",
+       y = "Covid-19 Rolling Vaccination and Death Totals") +
   scale_y_continuous(labels=comma, limits = (c(0,1050000)), 
                      sec.axis = sec_axis( ~./1050000, name = "Sentiment Score",
                                           labels = function(b) { paste0(signif(b, digits = 3)) })) +
@@ -223,5 +246,51 @@ dd %>%
   # margin usage: margin(t = 0, r = 0, b = 0, l = 0, unit = "pt") - think TRouBLe
 
 
+```
+
+```{r plot tweets per day}
+
+# shorter df/ dt to work with
+tpd <- tweetsPerDay
+tpd$sentiment <- as.factor(tpd$sentiment)
+tpd$sentiment <- factor(tpd$sentiment, levels = rev(unique(tpd$sentiment)))
+tpd$sentiment <- factor(tpd$sentiment, levels = c('POSITIVE', 'NEUTRAL', 'NEGATIVE', 'MIXED'))
+levels(tpd$sentiment)[1] <- "Positive"
+levels(tpd$sentiment)[2] <- "Neutral"
+levels(tpd$sentiment)[3] <- "Negative"
+levels(tpd$sentiment)[4] <- "Mixed"
+
+
+dailytweets <- 
+  tpd %>% ggplot(aes(x = date, y = count, fill = sentiment)) +
+  geom_col() +
+  labs( x = "Months",
+        y = "Tweets per Day",
+        fill = "Sentiment:") +
+  scale_fill_manual(values = c('green', 'lightsteelblue3', 'red', 'lightslategrey')) +
+  scale_x_date(expand = expansion(add = c(1, 27))) +
+  scale_y_continuous(breaks = c(0,100,200)) +
+  theme_classic() +
+  theme(legend.position = "bottom", legend.text = element_text(size = 8),
+        legend.title = element_text(size = 8, face = 'bold') , legend.direction = "horizontal",
+        legend.key.size = unit(10, 'pt'))
+  
 
 ```
+
+```{r plots in one page}
+
+# combine the plots one over the other
+figure <- ggarrange(overallData, dailytweets, heights = c(2, 0.9),
+          ncol = 1, nrow = 2, align = 'v')
+annotate_figure(figure,
+                top = text_grob("Average Sentiment vs Total Covid-19 Vaccinations and Deaths in the USA", 
+                                face = "bold", size = 12),
+                bottom = text_grob("Sentiment Score is 0-1 and Scaled for this graphic. \n Data thru March 14, 2021, extra right side units are added to this graph for labels. ",
+                                   face = 'italic', size=8, hjust = 1, x = 1, just = "right")
+                )
+
+
+
+<!-- ``` -->
+
