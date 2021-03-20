@@ -301,7 +301,6 @@ af
 ```{r add lines of interest}
 
 dates <- data.frame("Jan 20th - Inaug", "Feb 28th - J&J")
-coef(lm(ABV ~ as.Date(), ))
 
 updatedGraph <- 
   overallData +
