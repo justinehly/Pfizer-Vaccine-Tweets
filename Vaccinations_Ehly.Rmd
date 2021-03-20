@@ -17,6 +17,7 @@ library(tidyr)
 library(ggplot2)
 library(graphics)
 library(ggpubr)
+library(directlabels)
 library(survminer)
 library(magrittr)
 library(naniar)
@@ -64,7 +65,7 @@ names(vacc)[2] <- "state"
 ```{r read death data}
 # get death rates from https://data.cdc.gov/Case-Surveillance/United-States-COVID-19-Cases-and-Deaths-by-State-o/9mfq-cb36
 
-cd <- read.csv("C:/Users/justi/Documents/GitHub/7330-Term-Porject/Data Set/United_States_COVID-19_Cases_and_Deaths_by_State_over_Time031521.csv")
+cd <- read.csv("C:/Users/justi.DATA-POWER/Documents/Github/7330-Term-Project/Data Set/United_States_COVID-19_Cases_and_Deaths_by_State_over_Time031521.csv")
 #View(cd)
 cd <- cd %>% arrange(submission_date) %>% arrange(state)
 summary(cd)
@@ -104,7 +105,7 @@ str(cd)
 
 ```{r states table}
 
-states <- read.csv("C:/Users/justi/Documents/GitHub/7330-Term-Porject/Data Set/usa_states.csv")
+states <- read.csv("C:/Users/justi.DATA-POWER/Documents/Github/7330-Term-Project/Data Set/usa_states.csv")
 #View(states)
 names(states)[1] <- "state"
 names(states)[3] <- "code"
@@ -152,7 +153,7 @@ df2 <- as.data.frame(df2)
 
 ```{r twitter sentiment}
 
-sent <- read.csv("C:/Users/justi/Documents/GitHub/7330-Term-Porject/Data Set/tweets_loc_sen0315.csv")
+sent <- read.csv("C:/Users/justi.DATA-POWER/Documents/Github/7330-Term-Project/Data Set/tweets_loc_sen0315.csv")
 #View(sent)
 #names(sent)
 sent <- sent[,c(10,20:23)]
@@ -191,7 +192,7 @@ sentAns <- sentAns[,-4]
 
 ```{r tweets per day}
 
-tw <- read.csv("C:/Users/justi/Documents/GitHub/7330-Term-Porject/Data Set/tweets_loc_sen0315.csv")
+tw <- read.csv("C:/Users/justi.DATA-POWER/Documents/Github/7330-Term-Project/Data Set/tweets_loc_sen0315.csv")
 #View(tw)
 #names(tw)
 tw <- tw[,c(10,3,17:23)]
@@ -217,10 +218,12 @@ tweetsPerDay
 
 # prep dataframe for new melt method from data.table package
 sentAns$`Total Deaths` <- as.numeric(sentAns$`Total Deaths`)
+sentAns <- sentAns[-c(92,93),] # remove 3/13, 3/14 per group discussion about spike in 3/13 sentiment on 9 tweets
 
 # melt the dataframe for mapping multiple lines with different colors
 dd <- melt(as.data.table(sentAns), id=c("date"))
 names(dd)[2] <- "Legend"
+
 
 
 # plot deaths and vaccines 
@@ -238,14 +241,12 @@ overallData <-
   theme_classic() +
   theme(legend.position = "none") + 
   # old legend position in case we want to use it later theme(legend.position = c(0.12,0.86)) +
-  scale_x_date(limits = as.Date(c("2020-12-12", "2021-03-14")), 
-               # Expands 1 unit to the left, 27 units to the right for the labels
-               expand = expansion(add = c(1, 27))) + 
+  scale_x_date(expand = expansion(add = c(1, 27))) + 
   directlabels::geom_dl(aes(label = Legend), method = list("last.polygons", cex=0.7)) +
   theme(axis.text.y.right = element_text(margin = unit(c(0, 2, 0, 2), "pt")))
   # margin usage: margin(t = 0, r = 0, b = 0, l = 0, unit = "pt") - think TRouBLe
 
-
+ 
 ```
 
 ```{r plot tweets per day}
@@ -259,6 +260,8 @@ levels(tpd$sentiment)[1] <- "Positive"
 levels(tpd$sentiment)[2] <- "Neutral"
 levels(tpd$sentiment)[3] <- "Negative"
 levels(tpd$sentiment)[4] <- "Mixed"
+
+tpd <- tpd[-284,] # removing 3/13/21 row
 
 
 dailytweets <- 
@@ -283,14 +286,45 @@ dailytweets <-
 # combine the plots one over the other
 figure <- ggarrange(overallData, dailytweets, heights = c(2, 0.9),
           ncol = 1, nrow = 2, align = 'v')
+af <- annotate_figure(figure,
+                top = text_grob("Average Sentiment vs Total Covid-19 Vaccinations and Deaths in the USA", 
+                                face = "bold", size = 12),
+                bottom = text_grob("Sentiment Score is 0-1 and Scaled for this graphic. \n Data thru March 12, 2021, extra right side units are added to this graph for labels. ",
+                                   face = 'italic', size=8, hjust = 1, x = 1, just = "right"))
+# graphical output
+af
+
+
+```
+
+
+```{r add lines of interest}
+
+dates <- data.frame("Jan 20th - Inaug", "Feb 28th - J&J")
+coef(lm(ABV ~ as.Date(), ))
+
+updatedGraph <- 
+  overallData +
+  geom_vline(data = dates, aes(xintercept = as.Date("2021-01-20")), color="blue") +
+  geom_text(mapping = aes(x = as.Date("2021-01-20"),y=1050000, label = dates[1,1], angle=270, 
+                          vjust = -0.5, hjust = -.01), size=4, color="blue") +
+  geom_vline(data = dates, aes(xintercept = as.Date("2021-02-28")), color="blue") +
+  geom_text(mapping = aes(x = as.Date("2021-02-28"),y=1050000, label = dates[1,2], angle=270, 
+                          vjust = -0.5, hjust = -.01), size=4, color="blue") +
+  geom_abline()
+
+
+```
+
+```{r plots with dates in one page}
+
+# combine the plots one over the other
+figure <- ggarrange(updatedGraph, dailytweets, heights = c(2, 0.9), ncol = 1, nrow = 2, align = 'v')
 annotate_figure(figure,
                 top = text_grob("Average Sentiment vs Total Covid-19 Vaccinations and Deaths in the USA", 
                                 face = "bold", size = 12),
-                bottom = text_grob("Sentiment Score is 0-1 and Scaled for this graphic. \n Data thru March 14, 2021, extra right side units are added to this graph for labels. ",
-                                   face = 'italic', size=8, hjust = 1, x = 1, just = "right")
-                )
+                bottom = text_grob("Sentiment Score is 0-1 and Scaled for this graphic. \n Data thru March 12, 2021, extra right side units are added to this graph for labels. ",
+                                   face = 'italic', size=8, hjust = 1, x = 1, just = "right"))
 
-
-
-<!-- ``` -->
+```
 
