@@ -64,8 +64,8 @@ names(vacc)[2] <- "state"
 
 ```{r read death data}
 # get death rates from https://data.cdc.gov/Case-Surveillance/United-States-COVID-19-Cases-and-Deaths-by-State-o/9mfq-cb36
-
-cd <- read.csv("C:/Users/justi.DATA-POWER/Documents/Github/7330-Term-Project/Data Set/United_States_COVID-19_Cases_and_Deaths_by_State_over_Time031521.csv")
+# setwd("/Users/mingyang/Desktop/SMU/File Management & Database/7330-Term-Porject/Data Set")
+cd <- read.csv("United_States_COVID-19_Cases_and_Deaths_by_State_over_Time031521.csv")
 #View(cd)
 cd <- cd %>% arrange(submission_date) %>% arrange(state)
 summary(cd)
@@ -105,7 +105,7 @@ str(cd)
 
 ```{r states table}
 
-states <- read.csv("C:/Users/justi.DATA-POWER/Documents/Github/7330-Term-Project/Data Set/usa_states.csv")
+states <- read.csv("usa_states.csv")
 #View(states)
 names(states)[1] <- "state"
 names(states)[3] <- "code"
@@ -153,7 +153,7 @@ df2 <- as.data.frame(df2)
 
 ```{r twitter sentiment}
 
-sent <- read.csv("C:/Users/justi.DATA-POWER/Documents/Github/7330-Term-Project/Data Set/tweets_loc_sen0315.csv")
+sent <- read.csv("tweets_loc_sen0315.csv")
 #View(sent)
 #names(sent)
 sent <- sent[,c(10,20:23)]
@@ -177,6 +177,32 @@ sent$date <- as.character(sent$date)
 sent[93,1] <- "2021-03-14"
 sent$date <- as.factor(sent$date)
 
+#######################################################
+#Try build regression for average sentiment############
+#######################################################
+sent$date <- as.Date(sent$date)
+#Predict mixed
+sent.mix.lm = lm(`AvgMixed Sent`~date,data=sent)
+sent.mix.pred = predict(sent.mix.lm,data=sent)
+sent$MixedSent = sent.neg.pred
+#Predict Negative
+sent.neg.lm = lm(`AvgNegative Sent`~date,data=sent)
+sent.neg.pred = predict(sent.neg.lm,data=sent)
+sent$NegativeSent = sent.neg.pred
+#Predict Neutral
+sent.neutral.lm = lm(`AvgNeutral Sent`~date,data=sent)
+sent.neutral.pred = predict(sent.neutral.lm,data=sent)
+sent$NeutralSent = sent.neutral.pred
+#Predict Positive
+sent.pos.lm = lm(`AvgPositive Sent`~date,data=sent)
+sent.pos.pred = predict(sent.pos.lm,data=sent)
+sent$PositiveSent = sent.pos.pred
+
+sent = sent[,-c(2:5)]
+sent$date <- as.factor(sent$date)
+######################################################
+# End of replaceing regression to sentiment###########
+######################################################
 ```
 
 
@@ -192,7 +218,7 @@ sentAns <- sentAns[,-4]
 
 ```{r tweets per day}
 
-tw <- read.csv("C:/Users/justi.DATA-POWER/Documents/Github/7330-Term-Project/Data Set/tweets_loc_sen0315.csv")
+tw <- read.csv("tweets_loc_sen0315.csv")
 #View(tw)
 #names(tw)
 tw <- tw[,c(10,3,17:23)]
