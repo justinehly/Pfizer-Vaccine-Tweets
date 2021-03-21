@@ -200,9 +200,9 @@ sent$PositiveSent = sent.pos.pred
 
 sent = sent[,-c(2:5)]
 sent$date <- as.factor(sent$date)
-######################################################
-# End of replaceing regression to sentiment###########
-######################################################
+#############################################################
+# End of replacing regression to average sentiment ##########
+#############################################################
 ```
 
 
